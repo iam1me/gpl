@@ -1,0 +1,40 @@
+------------------------------------------------
+ABOUT THE GYPSY ROVER
+------------------------------------------------
+This is a bit of a tech demo demonstrating advanced techniques for developing games with GPL. The game itself is simple enough: its a generic action RPG. the main character moves around on a 2D map, evading and attacking monsters. The monsters spawn at a fixed rate and hunt down the player. The player has 3 HP (see the hearts at the top-right of the screen). Each hit from one of these monsters reduces the player's life by one. 
+
+The controls are simple. Use the arrow keys to move/face a direction and use the spacebar to attack. The demo is incomplete as far as the collision detection is concerned, but given a bit more time would be easy enough to fix. Right now, if you attack while facing the enemy, the enemy dies. Otherwise you will take a hit. You will also take a hit if the enemy 'touches' you - but again the collision detection needs work.
+
+Advanced Features of this demo include:
+	1. The use of the pre-compiler to use C/C++ style macros.
+		- Provides code reuse
+		- Breakup code into multiple files
+		- Use #defines to simplify code
+	2. Psuedo-Dynamic Memory (De)Allocation
+		- Reserve an array of objects up front for use later
+	3. The development of a sophisticated architeture ontop of the simple building blocks provided by GPL
+		- Well Defined Protocols/States
+		- Naming Conventions
+	4. Sprite Animation
+		- Demonstrates how to use a sprite sheet
+
+------------------------------------------------
+PROJECT STRUCTURE/BUILDING
+------------------------------------------------
+I found that GPL was lacking important features for programming. In particularly: the lack of functions/code reusability. There is some re-usability via animations, but these are not the same as functions. To get around this restriction, and to use other handy features, I made use of the g++ precompiler. 
+
+There is a make file that must be run to produce the out.gpl file. The gpl file is not pretty too look at - you will want to study the .h and .cpp files. I had to stick with .h and .cpp as my file naming convention as g++ wouldn't accept extensions it didn't recognize.
+
+The primary project file is test1.cpp. This includes all of the files in the proper order. Looking through this list you will note that I broke up the code into its various parts. For instance, there is a player_vars.h, player_init.cpp, player_anim.cpp, and player_macros.cpp. This includes everything directly relating to the player's character and responding to user input.
+
+
+---------------------------------------------------
+THE IMAGES IN THE GAME ARE (MOSTLY) NOT MY OWN
+---------------------------------------------------
+I went onto the internet and found some free sprite sheets and tilesets for use in my little game demo. I did modify these sheets for my own use and even created some new images for the game as needed.
+
+Map Tiles - downloads.rpg-palace.com/details.php?id=102
+
+Player's Sprite Sheet - gaurav.munjal.us/Universal-LPC-Spritesheet-Character-Generator/
+ 
+Slenderman Sprite Sheet - fayeyo.deviantart.com/art/Slender-Man-Sprites-RPG-Maker-VX-331114882

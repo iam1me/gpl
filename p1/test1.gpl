@@ -1,0 +1,203 @@
+//======================================
+//  DECLARATIONS SECTION
+//=====================================
+
+//  SYSTEM VARIABLES
+int window_width = 400;
+int window_height = 400;
+string window_title = "The Gypsy Rover";
+
+//  MAP VARIABLES
+int map_columns = 20;
+int map_rows = 20;
+int map_column_iterator = 0;
+int map_row_iterator = 0;
+int selected_tile_ndx = 0;
+int map_tile_height = window_height / map_rows;
+int map_tile_width = window_width / map_columns;
+rectangle map_tiles[map_columns * map_rows];
+
+
+//  GRID VARIABLES
+int enable_grid_mode = 1;
+int grid_horizontal_line_count = map_rows - 1;
+int grid_vertical_line_count = map_columns - 1;
+rectangle grid_horizontal_lines[grid_horizontal_line_count];
+rectangle grid_vertical_lines[grid_vertical_line_count];
+int grid_column_iterator = 0;
+int grid_row_iterator = 0;
+
+//  CREATURE VARIABLES
+int creature_max = 10;
+int creature_count = 0;
+circle creatures[creature_max];
+int creature_type[creature_max];
+int creature_hp[creature_max];
+int spawn_rate = 300; //every 300 animation iterations, spawn a creature
+int spawn_enabled = true;
+int creature_iterator = 0;
+
+//  PLAYER VARIABLES
+circle player();
+int player_hp = 3;
+
+//  ROOM VARIABLES
+int current_room = 0;
+int last_room = 0;
+int room_count = 1;
+int transition_north[room_count];
+int transition_east[room_count];
+int transition_west[room_count];
+int transition_south[room_count];
+
+//  CLOCK OBJECT
+rectangle clock();
+int tick_count = 0;
+int max_tick_count = 9999999;
+
+// Game Control Objects
+rectangle game_obj();
+int enable_debug_mode = 1;
+textbox txt_curr_anim();
+
+//  START SCREEN VARIABLES
+textbox start_screen_text(text="Hello World", drawing_order = 20);
+
+//  FORWARD DECLARATIONS
+forward animation ClockTickAnimation(rectangle clock_obj);
+forward animation StartScreenAnimation(rectangle ssa_game_obj);
+forward animation TransitionAnimation(rectangle transition_game_obj);
+//forward animation room_transition(rectangle room_trans_obj);
+//forward animation room_load(rectangle room_load_obj);
+
+//==============================================
+//	INITIALIZATION BLOCKS
+//==============================================
+//  Initialize Map Tiles
+initialization
+{
+	for(map_column_iterator = 0; map_column_iterator < map_columns; map_column_iterator += 1)
+	{
+		for(map_row_iterator = 0; map_row_iterator < map_rows; map_row_iterator += 1)
+		{
+	selected_tile_ndx = map_column_iterator * map_rows + map_row_iterator;
+        map_tiles[selected_tile_ndx].x = map_column_iterator * map_tile_width;
+	map_tiles[selected_tile_ndx].y = map_row_iterator * map_tile_height;
+	map_tiles[selected_tile_ndx].w = map_tile_width;
+	map_tiles[selected_tile_ndx].h = map_tile_height;
+	map_tiles[selected_tile_ndx].red = 0;
+	map_tiles[selected_tile_ndx].green = 1;
+	map_tiles[selected_tile_ndx].blue = 0;
+	map_tiles[selected_tile_ndx].drawing_order = 0;
+		}
+	}
+}
+
+//  INIT PLAYER
+initialization
+{
+	player.x = floor(map_columns/2.0) * map_tile_width;
+	player.y = floor(map_rows/2.0) * map_tile_height;
+	player.red = 0;
+	player.blue = 1;
+	player.green = 0;
+	player.radius = (map_tile_width + map_tile_height)/4;
+	player.drawing_order = 100;
+}
+
+//  INIT CREATURES
+initialization
+{
+	for(creature_iterator = 0; creature_iterator < creature_max; creature_iterator += 1)
+	{
+		creatures[creature_iterator].x = 0;
+		creatures[creature_iterator].y = 0;
+		creatures[creature_iterator].visible = 0;
+	}
+}
+
+//  INIT GRID
+initialization
+{
+	for(grid_column_iterator = 0; grid_column_iterator < grid_vertical_line_count; grid_column_iterator += 1)
+	{
+		grid_vertical_lines[grid_column_iterator].x = (grid_column_iterator + 1) * map_tile_width;
+		grid_vertical_lines[grid_column_iterator].y = 0;
+		grid_vertical_lines[grid_column_iterator].w = 1;
+		grid_vertical_lines[grid_column_iterator].h = window_height;
+		grid_vertical_lines[grid_column_iterator].red = 0;
+		grid_vertical_lines[grid_column_iterator].green = 0;
+		grid_vertical_lines[grid_column_iterator].blue = 0;
+		grid_vertical_lines[grid_column_iterator].drawing_order = 1;
+		grid_vertical_lines[grid_column_iterator].visible = enable_grid_mode;
+	}
+
+	for(grid_row_iterator = 0; grid_row_iterator < grid_horizontal_line_count; grid_row_iterator += 1)
+	{
+		grid_horizontal_lines[grid_row_iterator].x = 0;
+		grid_horizontal_lines[grid_row_iterator].y = (grid_row_iterator + 1) * map_tile_height;
+		grid_horizontal_lines[grid_row_iterator].w = window_width;
+		grid_horizontal_lines[grid_row_iterator].h = 1;
+		grid_horizontal_lines[grid_row_iterator].red = 0;
+		grid_horizontal_lines[grid_row_iterator].green = 0;
+		grid_horizontal_lines[grid_row_iterator].blue = 0;
+		grid_horizontal_lines[grid_row_iterator].drawing_order = 1;
+		grid_horizontal_lines[grid_row_iterator].visible = enable_grid_mode;
+	}
+}
+
+//  INIT GAME_OBJ & RELATED ITEMS
+initialization
+{
+	//Give the lowest priority so that it is invisible
+	game_obj.drawing_order = -1;
+	game_obj.red = 0;
+	game_obj.green = 0;
+	game_obj.blue = 0;
+
+	//Go to the Start Screen Animation
+	game_obj.animation_block = StartScreenAnimation;	
+	txt_curr_anim.visible = enable_debug_mode;
+	txt_curr_anim.text = "initializing...";
+	txt_curr_anim.x = 0;
+	txt_curr_anim.y = 50;
+	txt_curr_anim.size = 0.1;
+
+	//Init Clock
+	clock.drawing_order = -1;
+	clock.red = 0;
+	clock.green = 0;
+	clock.blue = 0;
+	clock.animation_block = ClockTickAnimation;
+}
+
+//=================================================
+//	CLOCK TICK ANIMATION
+//=================================================
+animation ClockTickAnimation(rectangle clock_obj)
+{
+	tick_count += 1;
+	if(tick_count > max_tick_count) tick_count = 0;
+}
+
+//=================================================
+//	START SCREEN ANIMATION
+//=================================================
+animation StartScreenAnimation(rectangle ssa_game_obj)
+{
+	txt_curr_anim.text = "Current Animation: StartScreenAnimation (" + tick_count + ")";
+
+	if(tick_count > 300)
+	{
+		game_obj.animation_block = TransitionAnimation;
+		tick_count = 0;
+	}
+}
+
+//=================================================
+//	TRANSITION ANIMATION
+//=================================================
+animation TransitionAnimation(rectangle transition_game_obj)
+{
+	txt_curr_anim.text = "Current Animation: TransitionAnimation";
+}
