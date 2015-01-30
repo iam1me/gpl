@@ -42,6 +42,9 @@ extern int line_count;            // current line in the input; from record.l
 #include <string>
 using namespace std;
 
+
+int field_count = 0; // the # of fields in the current record
+
 // bison syntax to indicate the end of the header
 %} 
 
@@ -124,10 +127,25 @@ declaration_list:
 
 //---------------------------------------------------------------------
 declaration:
-  T_RECORD T_ID {cout << "record " << *$2 << "\n{\n\n";} T_LBRACE field_list T_RBRACE
-  {
-      cout << "\n}\n\n";
-  }
+  T_RECORD T_ID 
+	{
+		cout << "record " << *$2 << "\n{\n\n"; 
+		field_count = 0;
+	} 
+  T_LBRACE field_list T_RBRACE
+	{
+		cout << "\n} " << field_count;
+
+		if(field_count == 1)
+		{
+			cout << " field was declared\n\n";
+		}
+		else
+		{
+			cout << " fields were declared\n\n";
+		}
+		field_count = 0;
+	}
   ;
 
 
@@ -141,6 +159,7 @@ field_list:
 field:
   T_ID T_ASSIGN T_INT_CONSTANT T_SEMIC
   {
+	field_count++;
     cout << "  " << *$1 << " = " << $3 << " (int)\n";
   }
   ;
