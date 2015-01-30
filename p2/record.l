@@ -131,7 +131,12 @@ The right-hand-side (RHS) specifies an action (code to execute) when
 		return T_DOUBLE_CONSTANT;
 	}
 
-[A-Za-z]+ 	{
+(JAN)|(FEB)|(MAR)|(APR)|(MAY)|(JUN)|(JUL)|(AUG)|(SEP)|(NOV)|(DEC)	{
+		get_string_value();
+		return T_MONTH;
+	}
+
+[A-Za-z]+[_A-Za-z0-9]* 	{
 	       get_string_value(); 
 		return T_ID;
 	}
@@ -141,6 +146,9 @@ The right-hand-side (RHS) specifies an action (code to execute) when
 		return T_STRING_CONSTANT;
 	}
 
+,	{
+		return T_COMMA;
+	}
 
 .	{
 		error();

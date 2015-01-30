@@ -87,6 +87,7 @@ int field_count = 0; // the # of fields in the current record
 %token T_RBRACE   "}"
 %token T_SEMIC    ";"
 %token T_RECORD   "record"
+%token T_COMMA    ","
 
 
 // if a token has a type associated with it, put that type (as named in the
@@ -95,8 +96,9 @@ int field_count = 0; // the # of fields in the current record
 // used by the parser (in the .y file)
 
 %token <union_int>    T_INT_CONSTANT      "int constant"
-%token <union_double> T_DOUBLE_CONSTANT   "double constant"
 %token <union_string> T_STRING_CONSTANT   "string constant"
+%token <union_double> T_DOUBLE_CONSTANT   "double constant"
+%token <union_string> T_MONTH             "month"
 %token <union_string> T_ID                "identifier"
 %token <union_string> T_ERROR             "error"
 
@@ -166,11 +168,6 @@ field:
 		cout << "  " << *$1 << " = " << $3 << " (int)\n";
 	}
   | 
-  T_ID T_ASSIGN T_DOUBLE_CONSTANT T_SEMIC
-	{
-		cout << "  " << *$1 << " = " << $3 << " (double)\n";
-	}	
-  |
   T_ID T_ASSIGN T_STRING_CONSTANT T_SEMIC
 	{
 		cout << "  " << *$1 << " = '" << *$3 << "' (string)\n";
@@ -178,6 +175,19 @@ field:
 		// let's free the string we allocated
 		delete $3;
 		$3 = 0;
+	}
+  |
+  T_ID T_ASSIGN T_DOUBLE_CONSTANT T_SEMIC
+	{
+		cout << "  " << *$1 << " = " << $3 << " (double)\n";
+	}	
+  |
+  T_ID T_ASSIGN T_MONTH T_INT_CONSTANT T_COMMA T_INT_CONSTANT T_SEMIC
+	{
+		cout << "  " << *$1 << " = " << *$3 
+			<< " " << $4 <<  ", " << $6 << " (date)\n";
+
+		delete $3;
 	}
   ;
 
