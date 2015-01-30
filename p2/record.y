@@ -69,6 +69,7 @@ int field_count = 0; // the # of fields in the current record
 
 %union {
  int            union_int;
+ double         union_double;
  std::string    *union_string;  // MUST be a pointer to a string (this sucks!)
 }
 
@@ -93,6 +94,7 @@ int field_count = 0; // the # of fields in the current record
 // used by the parser (in the .y file)
 
 %token <union_int>    T_INT_CONSTANT      "int constant"
+%token <union_double> T_DOUBLE_CONSTANT   "double constant"
 %token <union_string> T_ID                "identifier"
 %token <union_string> T_ERROR             "error"
 
@@ -151,17 +153,21 @@ declaration:
 
 //---------------------------------------------------------------------
 field_list:
-  field_list field
+  field_list field { field_count++; }
   | empty 
   ;
 
 //---------------------------------------------------------------------
 field:
   T_ID T_ASSIGN T_INT_CONSTANT T_SEMIC
-  {
-	field_count++;
-    cout << "  " << *$1 << " = " << $3 << " (int)\n";
-  }
+	{
+		cout << "  " << *$1 << " = " << $3 << " (int)\n";
+	}
+  | 
+  T_ID T_ASSIGN T_DOUBLE_CONSTANT T_SEMIC
+	{
+		cout << "  " << *$1 << " = " << $3 << " (double)\n";
+	}	
   ;
   
 //---------------------------------------------------------------------

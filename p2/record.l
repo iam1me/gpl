@@ -46,6 +46,15 @@ void get_int_value()
   // the union and its union_int field are declared in record.y
   yylval.union_int = atoi(yytext);
 }
+
+void get_double_value()
+{
+	// assumes that the string in yytext is a double
+	// convert the string yytext into a double
+	// put the double into global union used to send values to the parser
+	// the union and its union_double field are declared in record.y
+	yylval.union_double = atof(yytext);
+}
  
 
 void get_string_value()
@@ -92,8 +101,23 @@ The right-hand-side (RHS) specifies an action (code to execute) when
 ";"             return T_SEMIC;
 
 
-[0-9]+          get_int_value(); return T_INT_CONSTANT;
-[A-Za-z]+       get_string_value(); return T_ID;
+[0-9]+		{
+		get_int_value();
+		return T_INT_CONSTANT;
+	}
+
+([0-9]+\.[0-9]*)|([0-9]*\.[0-9]+) 	{
+		get_double_value(); 
+		return T_DOUBLE_CONSTANT;
+	}
+
+[A-Za-z]+ 	{
+	       get_string_value(); 
+		return T_ID;
+	}
 
 
-.               error(); return T_ERROR;
+.	{
+	        error(); 
+		return T_ERROR;
+	}
