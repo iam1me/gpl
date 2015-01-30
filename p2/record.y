@@ -68,6 +68,7 @@ int field_count = 0; // the # of fields in the current record
 // be adding a double declaration to the union.
 
 %union {
+ char           union_char;
  int            union_int;
  double         union_double;
  std::string    *union_string;  // MUST be a pointer to a string (this sucks!)
@@ -95,6 +96,7 @@ int field_count = 0; // the # of fields in the current record
 
 %token <union_int>    T_INT_CONSTANT      "int constant"
 %token <union_double> T_DOUBLE_CONSTANT   "double constant"
+%token <union_string> T_STRING_CONSTANT   "string constant"
 %token <union_string> T_ID                "identifier"
 %token <union_string> T_ERROR             "error"
 
@@ -168,8 +170,17 @@ field:
 	{
 		cout << "  " << *$1 << " = " << $3 << " (double)\n";
 	}	
+  |
+  T_ID T_ASSIGN T_STRING_CONSTANT T_SEMIC
+	{
+		cout << "  " << *$1 << " = '" << *$3 << "' (string)\n";
+
+		// let's free the string we allocated
+		delete $3;
+		$3 = 0;
+	}
   ;
-  
+
 //---------------------------------------------------------------------
 empty:
   ;

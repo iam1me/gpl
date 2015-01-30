@@ -38,6 +38,14 @@ Error error_handler; // error reporting object
 //   in that file will be the line_count in this file (it becomes global)
 int line_count = 1;
 
+void get_char_value()
+{
+	// assumes that the string in yytext is one character long
+	// put the first character into the global union used to send values to the parser
+	// the union and its union_char field are declared in record.y
+	yylval.union_char = yytext[0];
+}
+
 void get_int_value()
 {
   // assumes that the string in yytext is an integer
@@ -64,6 +72,18 @@ void get_string_value()
   // This is a potential memory leak.  Think carefully about where and when
   // this memory should be deleted.
   yylval.union_string = new string(yytext);
+}
+
+void get_string_constant()
+{
+  // Need to get the string constant in the form: "<string_constant>"
+  // We want top get the substring of yytext, keeping all but the first and last characters
+  int total_len = strlen(yytext);
+  char temp[total_len - 1]; //minus 2 for the quotes, +1 for the ending \0
+  memcpy(temp, yytext + 1, total_len -2);
+  temp[total_len -2] = '\0';
+
+  yylval.union_string = new string(temp);
 }
 
 void error()
@@ -116,8 +136,13 @@ The right-hand-side (RHS) specifies an action (code to execute) when
 		return T_ID;
 	}
 
+\"([^"]|\\\")*\"	{
+		get_string_constant();
+		return T_STRING_CONSTANT;
+	}
+
 
 .	{
-	        error(); 
+		error();
 		return T_ERROR;
 	}
