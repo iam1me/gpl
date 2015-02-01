@@ -26,7 +26,7 @@ void capture_double_const()
 	yylval.union_double = atof(yytext);
 }	
 
-void capture_id()
+void capture_token()
 {
 	yylval.union_string = new std::string(yytext);
 }
@@ -42,6 +42,11 @@ void capture_string_const()
 	yylval.union_string = new std::string(temp);
 }
 
+void handle_illegal_token()
+{
+	error_handler.error(Error::ILLEGAL_TOKEN, yytext);
+	capture_token();
+}
 
 %}
 
@@ -217,6 +222,10 @@ void capture_string_const()
 
 "else"		{
 			return T_ELSE;
+		}
+
+"//".*		{
+			// This is a comment. Ignore it.	
 		}
 
 	/**************************************
@@ -411,8 +420,8 @@ void capture_string_const()
 				return T_FALSE;
 			}
 
-[a-zA-Z]+[a-zA-Z0-9_]*	{
-				capture_id();
+[a-zA-Z_]+[a-zA-Z0-9_]*	{
+				capture_token();
 				return T_ID;
 			}
 
@@ -444,14 +453,10 @@ void capture_string_const()
 	*************************************/
 .		{
 			//TO DO: Error Handling
+			handle_illegal_token();
 			return T_ERROR;
 		}
 %%
 /*********************************************
 	O T H E R  C++  C O D E
 *********************************************/
-/*main()
-{
-	yylex();
-}
-*/

@@ -128,9 +128,9 @@ extern int line_count;            // current line in the input; from record.l
 %token T_NOT                 "!"
 
 %token <union_string>	T_ID			"identifier"
-%token <untion_int> 	T_INT_CONSTANT		"int constant"
-%token <untion_double>	T_DOUBLE_CONSTANT	"double constant"
-%token <untion_string>	T_STRING_CONSTANT	"string constant"
+%token <union_int> 	T_INT_CONSTANT		"int constant"
+%token <union_double>	T_DOUBLE_CONSTANT	"double constant"
+%token <union_string>	T_STRING_CONSTANT	"string constant"
 
 // special token that does not match any production
 // used for characters that are not part of the language
@@ -207,11 +207,19 @@ parameter_list :
 //---------------------------------------------------------------------
 parameter:
     T_ID T_ASSIGN expression
+	{
+		//free the ID
+		delete $1;
+	}
     ;
 
 //---------------------------------------------------------------------
 forward_declaration:
     T_FORWARD T_ANIMATION T_ID T_LPAREN animation_parameter T_RPAREN
+	{
+		//free the ID
+		delete $3;
+	}
     ;
 
 //---------------------------------------------------------------------
@@ -235,20 +243,43 @@ initialization_block:
 //---------------------------------------------------------------------
 animation_block:
     T_ANIMATION T_ID T_LPAREN check_animation_parameter T_RPAREN T_LBRACE { } statement_list T_RBRACE end_of_statement_block
+	{
+		//free the ID
+		delete $2;
+	}
     ;
 
 //---------------------------------------------------------------------
 animation_parameter:
     object_type T_ID
+	{
+		//free the ID
+		delete $2;
+	}
     ;
 
 //---------------------------------------------------------------------
 check_animation_parameter:
     T_TRIANGLE T_ID
+	{
+		delete $2; // free the ID
+	}
     | T_PIXMAP T_ID
+	{
+		delete $2; // free the ID
+	}
     | T_CIRCLE T_ID
+	{
+		delete $2; // free the ID
+	}
     | T_RECTANGLE T_ID
+	{
+		delete $2; // free the ID
+	}
     | T_TEXTBOX T_ID
+	{
+		delete $2; // free the ID
+	}
     ;
 
 //---------------------------------------------------------------------
@@ -351,8 +382,19 @@ assign_statement:
 variable:
     T_ID
     | T_ID T_LBRACKET expression T_RBRACKET
+	{
+		delete $1; // free the ID
+	}
     | T_ID T_PERIOD T_ID
+	{
+		delete $1; // free the ID
+		delete $3; // free the ID
+	}
     | T_ID T_LBRACKET expression T_RBRACKET T_PERIOD T_ID
+	{
+		delete $1; // free the ID
+		delete $6; // free the ID
+	}
     ;
 
 //---------------------------------------------------------------------
@@ -386,6 +428,9 @@ primary_expression:
     | T_FALSE
     | T_DOUBLE_CONSTANT
     | T_STRING_CONSTANT
+	{
+		delete $1;
+	}
     ;
 
 //---------------------------------------------------------------------
