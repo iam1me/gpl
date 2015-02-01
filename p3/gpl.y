@@ -45,6 +45,11 @@ extern int line_count;            // current line in the input; from record.l
 %token <union_int> T_FORWARD "forward" // value is line number
 %token T_INITIALIZATION      "initialization" 
 
+%token <union_string>	T_ID			"identifier"
+%token <union_int> 	T_INT_CONSTANT		"int constant"
+%token <union_double>	T_DOUBLE_CONSTANT	"double constant"
+%token <union_string>	T_STRING_CONSTANT	"string constant"
+
 %token T_TRUE                "true"
 %token T_FALSE               "false"
 
@@ -73,64 +78,131 @@ extern int line_count;            // current line in the input; from record.l
 %token T_LKEY                "lkey"
 %token T_WKEY                "wkey"
 
-%token T_TOUCHES             "touches"
-%token T_NEAR                "near"
 
 %token T_ANIMATION           "animation"
 
-%token T_IF                  "if"
-%token T_FOR                 "for"
-%token T_ELSE                "else"
-%token <union_int> T_PRINT           "print" // value is line number
-%token <union_int> T_EXIT            "exit" // value is line number
 
-%token T_LPAREN              "("
-%token T_RPAREN              ")"
 %token T_LBRACE              "{"
 %token T_RBRACE              "}"
-%token T_LBRACKET            "["
-%token T_RBRACKET            "]"
 %token T_SEMIC               ";"
 %token T_COMMA               ","
-%token T_PERIOD              "."
 
-%token T_ASSIGN              "="
-%token T_PLUS_ASSIGN         "+="
-%token T_MINUS_ASSIGN        "-="
-%token T_PLUS_PLUS           "++"
-%token T_MINUS_MINUS         "--"
+/********************************************************
+	Assignment Operators
+	Precedence Level 1. Group to the right.
+	Example: "a = b = c" should be evaluated as
+		 "a = (b = c)"
+********************************************************/
+%right ASSIGN_OPS
+%right T_ASSIGN              "="
+%right T_PLUS_ASSIGN         "+="
+%right T_MINUS_ASSIGN        "-="
 
-%token T_ASTERISK            "*"
-%token T_DIVIDE              "/"
-%token T_MOD                 "%"
-%token T_PLUS                "+"
-%token T_MINUS               "-"
-%token T_SIN                 "sin"
-%token T_COS                 "cos"
-%token T_TAN                 "tan"
-%token T_ASIN                "asin"
-%token T_ACOS                "acos"
-%token T_ATAN                "atan"
-%token T_SQRT                "sqrt"
-%token T_FLOOR               "floor"
-%token T_ABS                 "abs"
-%token T_RANDOM              "random"
+/********************************************************
+	Logic Operators
+	Precedence Level 2. Group to the left.
+	Example: "a && b || c" ==> "(a && b) || c"
+********************************************************/
+%left LOGIC_COMPARE_OPS
+%left T_AND                 "&&"
+%left T_OR                  "||"
 
-%token T_LESS                "<"
-%token T_GREATER             ">"
-%token T_LESS_EQUAL          "<="
-%token T_GREATER_EQUAL       ">="
-%token T_EQUAL               "=="
-%token T_NOT_EQUAL           "!="
+/********************************************************
+	GPL Object Comparison Functions
+	Precedence Level 3. Non-Associative.
+	These operators cannot be chained.
+	Example: "objA touches objB" is OK
+		but "objA touches objB near objC" is
+		not supported.
+********************************************************/
+%nonassoc OBJECT_COMPARE_OPS
+%nonassoc T_TOUCHES             "touches"
+%nonassoc T_NEAR                "near"
 
-%token T_AND                 "&&"
-%token T_OR                  "||"
-%token T_NOT                 "!"
+/********************************************************
+	Comparison Operators
+	Precedence Level 4. Group to the left.
+	Example: "a > b <= c" ==> "(a > b) <= c"
+********************************************************/
+%left MATH_COMPARE_OPS
+%left T_LESS                "<"
+%left T_GREATER             ">"
+%left T_LESS_EQUAL          "<="
+%left T_GREATER_EQUAL       ">="
+%left T_EQUAL               "=="
+%left T_NOT_EQUAL           "!="
 
-%token <union_string>	T_ID			"identifier"
-%token <union_int> 	T_INT_CONSTANT		"int constant"
-%token <union_double>	T_DOUBLE_CONSTANT	"double constant"
-%token <union_string>	T_STRING_CONSTANT	"string constant"
+/********************************************************
+	Simple Mathematical Operators
+	Precedence Level 5. Group to the left.
+	Example "a + b - c" ==> "(a + b) - c"
+********************************************************/
+%precedence MATH_SIMPLE_OPS
+%left T_PLUS                "+"
+%left T_MINUS               "-"
+
+/********************************************************
+	Complex Mathematical Operators
+	Precedence Level 6. Group to the left.
+	Example: "a * b / c" ==> "(a * b) / c"
+********************************************************/
+%precedence MATH_COMPLEX_OPS
+%left T_ASTERISK            "*"
+%left T_DIVIDE              "/"
+%left T_MOD                 "%"
+
+/********************************************************
+	Unary Operators
+	Precedence Level 6. No associativity.
+********************************************************/
+%precedence UNARY_OPS
+%nonassoc T_PLUS_PLUS           "++"
+%nonassoc T_MINUS_MINUS         "--"
+%nonassoc T_NOT                 "!"
+
+/********************************************************
+	Scope Operators
+	Precedence Level 7. Non Associative.
+********************************************************/
+%precedence SCOPE_OPS
+%nonassoc T_PERIOD              "."
+
+/********************************************************
+	Parentheses, Function Calls, Array Indeces
+	Precendence Level 8. No associativity.
+********************************************************/
+%precedence SUB_EXPR_OPS
+%nonassoc T_LPAREN              "("
+%nonassoc T_RPAREN              ")"
+%nonassoc T_LBRACKET            "["
+%nonassoc T_RBRACKET            "]"
+
+%nonassoc T_SIN                 "sin"
+%nonassoc T_COS                 "cos"
+%nonassoc T_TAN                 "tan"
+%nonassoc T_ASIN                "asin"
+%nonassoc T_ACOS                "acos"
+%nonassoc T_ATAN                "atan"
+%nonassoc T_SQRT                "sqrt"
+%nonassoc T_FLOOR               "floor"
+%nonassoc T_ABS                 "abs"
+%nonassoc T_RANDOM              "random"
+%nonassoc <union_int> T_PRINT           "print" // value is line number
+%nonassoc <union_int> T_EXIT            "exit" // value is line number
+
+/*******************************************************
+	We need to setup the associativity for
+	if.. then .. else statements. These can be 
+	nested. 
+
+	A if statement with an else has higher precedence
+	than an if statement without an else
+*******************************************************/
+%precedence IF_NO_ELSE		"if-then"
+%precedence IF_ELSE		"if-then-else"
+%nonassoc T_IF                  "if"
+%nonassoc T_FOR                 "for"
+%nonassoc T_ELSE                "else"
 
 // special token that does not match any production
 // used for characters that are not part of the language
@@ -352,8 +424,8 @@ statement:
 
 //---------------------------------------------------------------------
 if_statement:
-    T_IF T_LPAREN expression T_RPAREN if_block
-    | T_IF T_LPAREN expression T_RPAREN if_block T_ELSE if_block
+    T_IF T_LPAREN expression T_RPAREN if_block %prec IF_NO_ELSE
+    | T_IF T_LPAREN expression T_RPAREN if_block T_ELSE if_block %prec IF_ELSE
     ;
 
 //---------------------------------------------------------------------
@@ -363,19 +435,19 @@ for_statement:
 
 //---------------------------------------------------------------------
 print_statement:
-    T_PRINT T_LPAREN expression T_RPAREN
+    T_PRINT T_LPAREN expression T_RPAREN %prec SUB_EXPR_OPS
     ;
 
 //---------------------------------------------------------------------
 exit_statement:
-    T_EXIT T_LPAREN expression T_RPAREN
+    T_EXIT T_LPAREN expression T_RPAREN %prec SUB_EXPR_OPS
     ;
 
 //---------------------------------------------------------------------
 assign_statement:
-    variable T_ASSIGN expression
-    | variable T_PLUS_ASSIGN expression
-    | variable T_MINUS_ASSIGN expression
+    variable T_ASSIGN expression %prec ASSIGN_OPS
+    | variable T_PLUS_ASSIGN expression %prec ASSIGN_OPS
+    | variable T_MINUS_ASSIGN expression %prec ASSIGN_OPS
     ;
 
 //---------------------------------------------------------------------
@@ -397,26 +469,27 @@ variable:
 	}
     ;
 
+
 //---------------------------------------------------------------------
 expression:
     primary_expression
-    | expression T_OR expression
-    | expression T_AND expression
-    | expression T_LESS_EQUAL expression
-    | expression T_GREATER_EQUAL  expression
-    | expression T_LESS expression 
-    | expression T_GREATER  expression
-    | expression T_EQUAL expression
-    | expression T_NOT_EQUAL expression
-    | expression T_PLUS expression 
-    | expression T_MINUS expression
-    | expression T_ASTERISK expression
-    | expression T_DIVIDE expression
-    | expression T_MOD expression
-    | T_MINUS  expression
-    | T_NOT  expression
-    | math_operator T_LPAREN expression T_RPAREN
-    | variable geometric_operator variable
+    | expression T_OR expression %prec LOGIC_COMPARE_OPS
+    | expression T_AND expression %prec LOGIC_COMPARE_OPS
+    | expression T_LESS_EQUAL expression %prec MATH_COMPARE_OPS
+    | expression T_GREATER_EQUAL  expression %prec MATH_COMPARE_OPS
+    | expression T_LESS expression  %prec MATH_COMPARE_OPS
+    | expression T_GREATER  expression %prec MATH_COMPARE_OPS
+    | expression T_EQUAL expression %prec MATH_COMPARE_OPS
+    | expression T_NOT_EQUAL expression %prec MATH_COMPARE_OPS
+    | expression T_PLUS expression  %prec MATH_SIMPLE_OPS
+    | expression T_MINUS expression %prec MATH_SIMPLE_OPS
+    | expression T_ASTERISK expression %prec MATH_COMPLEX_OPS
+    | expression T_DIVIDE expression %prec MATH_COMPLEX_OPS
+    | expression T_MOD expression %prec MATH_COMPLEX_OPS
+    | T_MINUS  expression %prec UNARY_OPS
+    | T_NOT  expression %prec UNARY_OPS
+    | math_operator T_LPAREN expression T_RPAREN %prec SUB_EXPR_OPS
+    | variable geometric_operator variable %prec OBJECT_COMPARE_OPS
     ;
 
 //---------------------------------------------------------------------
