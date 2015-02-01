@@ -87,13 +87,26 @@ extern int line_count;            // current line in the input; from record.l
 %token T_SEMIC               ";"
 %token T_COMMA               ","
 
+%nonassoc T_SIN                 "sin"
+%nonassoc T_COS                 "cos"
+%nonassoc T_TAN                 "tan"
+%nonassoc T_ASIN                "asin"
+%nonassoc T_ACOS                "acos"
+%nonassoc T_ATAN                "atan"
+%nonassoc T_SQRT                "sqrt"
+%nonassoc T_FLOOR               "floor"
+%nonassoc T_ABS                 "abs"
+%nonassoc T_RANDOM              "random"
+%nonassoc <union_int> T_PRINT           "print" // value is line number
+%nonassoc <union_int> T_EXIT            "exit" // value is line number
+
 /********************************************************
 	Assignment Operators
 	Precedence Level 1. Group to the right.
 	Example: "a = b = c" should be evaluated as
 		 "a = (b = c)"
 ********************************************************/
-%right ASSIGN_OPS
+%precedence ASSIGN_OPS
 %right T_ASSIGN              "="
 %right T_PLUS_ASSIGN         "+="
 %right T_MINUS_ASSIGN        "-="
@@ -103,7 +116,7 @@ extern int line_count;            // current line in the input; from record.l
 	Precedence Level 2. Group to the left.
 	Example: "a && b || c" ==> "(a && b) || c"
 ********************************************************/
-%left LOGIC_COMPARE_OPS
+%precedence LOGIC_COMPARE_OPS
 %left T_AND                 "&&"
 %left T_OR                  "||"
 
@@ -115,7 +128,7 @@ extern int line_count;            // current line in the input; from record.l
 		but "objA touches objB near objC" is
 		not supported.
 ********************************************************/
-%nonassoc OBJECT_COMPARE_OPS
+%precedence OBJECT_COMPARE_OPS
 %nonassoc T_TOUCHES             "touches"
 %nonassoc T_NEAR                "near"
 
@@ -124,7 +137,7 @@ extern int line_count;            // current line in the input; from record.l
 	Precedence Level 4. Group to the left.
 	Example: "a > b <= c" ==> "(a > b) <= c"
 ********************************************************/
-%left MATH_COMPARE_OPS
+%precedence MATH_COMPARE_OPS
 %left T_LESS                "<"
 %left T_GREATER             ">"
 %left T_LESS_EQUAL          "<="
@@ -162,33 +175,20 @@ extern int line_count;            // current line in the input; from record.l
 
 /********************************************************
 	Scope Operators
-	Precedence Level 7. Non Associative.
+	Precedence Level 7
 ********************************************************/
 %precedence SCOPE_OPS
-%nonassoc T_PERIOD              "."
+%token T_PERIOD "."
 
 /********************************************************
 	Parentheses, Function Calls, Array Indeces
-	Precendence Level 8. No associativity.
+	Precendence Level 8.
 ********************************************************/
 %precedence SUB_EXPR_OPS
-%nonassoc T_LPAREN              "("
-%nonassoc T_RPAREN              ")"
-%nonassoc T_LBRACKET            "["
-%nonassoc T_RBRACKET            "]"
-
-%nonassoc T_SIN                 "sin"
-%nonassoc T_COS                 "cos"
-%nonassoc T_TAN                 "tan"
-%nonassoc T_ASIN                "asin"
-%nonassoc T_ACOS                "acos"
-%nonassoc T_ATAN                "atan"
-%nonassoc T_SQRT                "sqrt"
-%nonassoc T_FLOOR               "floor"
-%nonassoc T_ABS                 "abs"
-%nonassoc T_RANDOM              "random"
-%nonassoc <union_int> T_PRINT           "print" // value is line number
-%nonassoc <union_int> T_EXIT            "exit" // value is line number
+%token T_LPAREN              "("
+%token T_RPAREN              ")"
+%token T_LBRACKET            "["
+%token T_RBRACKET            "]"
 
 /*******************************************************
 	We need to setup the associativity for
