@@ -1,6 +1,34 @@
 #include "GPLVariant.h"
 #include <typeinfo>
 
+template<>
+GPLVariant::GPLVariant<int>(const int& val)
+{
+	_type = INT;
+	_val_int = val;
+}
+
+template<>
+GPLVariant::GPLVariant<double>(const double& val)
+{
+	_type = DOUBLE;
+	_val_double = val;
+}
+
+template<>
+GPLVariant::GPLVariant<std::string>(const std::string& val)
+{
+	_type = STRING;
+	_val_pstr = new std::string(val);
+}
+
+template<>
+GPLVariant::GPLVariant<const char*&>(const char*& val)
+{
+	_type = STRING;
+	_val_pstr = new std::string(val);
+}
+
 GPLVariant::~GPLVariant()
 {
 	if(_type & STRING)
@@ -43,6 +71,33 @@ void GPLVariant::set_type(const Gpl_type& type)
 	}
 }
 
+std::string GPLVariant::to_string() const
+{
+	std::string ret;
+	switch(_type)
+	{
+		case INT:
+			ret = std::to_string(_val_int);
+			break;
+
+		case DOUBLE:
+			ret = std::to_string(_val_double);
+			break;
+
+		case STRING:
+			ret = *_val_pstr;	
+			break;
+
+		default:
+			std::string err = "GPLVariant::to_string - Unsupported Type (";
+			err += std::to_string((int)_type);
+			err += ")";
+			throw std::runtime_error(err);
+	}
+
+	return ret;
+}
+
 template<>
 void GPLVariant::set_value<int>(const int& val)
 {
@@ -77,24 +132,13 @@ void GPLVariant::set_value<std::string>(const std::string& val)
 }
 
 template<>
-GPLVariant::GPLVariant<int>(const int& val)
+void GPLVariant::set_value<const char*&>(const char*& val)
 {
-	_type = INT;
-	_val_int = val;
-}
-
-template<>
-GPLVariant::GPLVariant<double>(const double& val)
-{
-	_type = DOUBLE;
-	_val_double = val;
-}
-
-template<>
-GPLVariant::GPLVariant<std::string>(const std::string& val)
-{
-	_type = STRING;
-	_val_pstr = new std::string(val);
+	if(_type != STRING)
+	{
+		throw std::logic_error("GPLVariant::set_value<std::string> - the variant is not set to type STRIGN");
+	}
+	*_val_pstr = val;
 }
 
 template<>
