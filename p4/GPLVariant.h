@@ -33,4 +33,22 @@ private:
 	};
 };
 
+template<class T>
+GPLVariant::GPLVariant(const T& val)
+{
+	throw std::runtime_error("GPLVariant::GPLVariant - Type not recognized");
+}
+
+template<class T>
+const T& GPLVariant::get_value() const
+{
+	throw std::runtime_error("GPLVariant::get_value - Unsupported Template Specialization");
+}
+
+template<class T>
+void GPLVariant::set_value(const T&)
+{
+	throw std::runtime_error("GPLVariant::set_value - Type Not Recognized");
+}
+
 #endif
