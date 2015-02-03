@@ -26,6 +26,8 @@
 
 #include <string>
 #include "gpl_type.h"
+#include "expression.h"
+#include "value.h"
 
 #include "y.tab.h"
 

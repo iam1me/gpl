@@ -1,4 +1,5 @@
 #include "symbol.h"
+#include "value.h"
 
 Symbol::~Symbol()
 {
@@ -32,3 +33,36 @@ std::string Symbol::to_string() const
 	return ret;
 }
 
+std::shared_ptr<GPLVariant> Symbol::get_variant()
+{
+	return _pvar;
+}
+
+std::shared_ptr<IValue> Symbol::get_value()
+{
+	std::shared_ptr<IValue> pVal(
+		new ReferenceValue(std::shared_ptr<Symbol>(this)));
+	return pVal;
+}
+
+
+void Symbol::set_value(std::shared_ptr<IValue> pval)
+{
+	switch(_pvar->get_type())
+	{
+		case INT:
+			_pvar->set_value<int>(pval->get_int());
+			break;
+
+		case DOUBLE:
+			_pvar->set_value<double>(pval->get_double());
+			break;
+
+		case STRING:
+			_pvar->set_value<std::string>(pval->get_string());
+			break;
+
+		default:
+			throw std::logic_error("Symbol::set_value - Unsupported Type");		
+	}	
+}

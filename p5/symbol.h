@@ -15,6 +15,10 @@
 #include "GPLVariant.h"
 #include "gpl_assert.h"
 
+// Forward Declaration
+class IValue;
+
+
 class Symbol
 {
 public:
@@ -27,6 +31,11 @@ public:
 	
 	template<class T>
 	const T& get_value() const;
+
+	std::shared_ptr<IValue> get_value();	
+	void set_value(std::shared_ptr<IValue> pval);
+
+	std::shared_ptr<GPLVariant> get_variant();
 
 	std::string to_string() const;
 
@@ -47,5 +56,6 @@ const T& Symbol::get_value() const
 {
 	return _pvar->get_value<T>();
 }
+
 
 #endif

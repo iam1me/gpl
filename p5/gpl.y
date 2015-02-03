@@ -81,6 +81,7 @@ bool is_symbol_defined(std::string name)
 	char           union_char;
 	int            union_int;
 	double         union_double;
+	IExpression*   union_expression;
 
 	// Use the new shared_ptr class instead!
 	std::string    *union_string;  // MUST be a pointer to a string (this sucks!)
@@ -270,6 +271,7 @@ bool is_symbol_defined(std::string name)
 %token T_ERROR               "error"
 
 %type <union_type> simple_type
+%type <union_expression> expression
 
 %%
 /*********************************************
@@ -310,11 +312,7 @@ variable_declaration:
 		delete $2; // free ID
 	}
 
-/* Temporarily simplifying this one to only accept an integer for p4.
     | simple_type  T_ID  T_LBRACKET expression T_RBRACKET
-*/
-
-    | simple_type T_ID T_LBRACKET T_INT_CONSTANT T_RBRACKET
 	{
 		if(is_symbol_defined(*$2))
 		{
@@ -322,7 +320,22 @@ variable_declaration:
 		}
 		else
 		{
-			for(int i = 0; i < $4; i++)
+			std::shared_ptr<IExpression> ndx_expr($4);
+			if(ndx_expr->get_type() != INT)
+			{
+				error_handler.error(Error::ARRAY_INDEX_MUST_BE_AN_INTEGER);
+				break;
+			}
+
+			std::shared_ptr<IValue> ndx_val = ndx_expr->eval();
+			int array_size = ndx_val->get_int();
+			if(array_size <= 0)
+			{
+				error_handler.error(Error::INVALID_ARRAY_SIZE);
+				break;
+			}
+
+			for(int i = 0; i < array_size; i++)
 			{
 				std::string name = *$2 + "[";
 				name += std::to_string(i) + "]";
@@ -388,6 +401,22 @@ parameter_list :
 parameter:
     T_ID T_ASSIGN expression
 	{
+		try
+		{
+			std::shared_ptr<Symbol> pSymbol(
+				Symbol_table::instance()->find_symbol(*$1));
+
+			std::shared_ptr<IExpression> pExpr($3);
+				
+			std::shared_ptr<IValue> pVal = pExpr->eval();
+		
+			pSymbol->set_value(pVal);	
+		}
+		catch(const std::exception& ex)
+		{
+			std::cerr << "Assignment Exception: " << ex.what() << std::endl;
+		}
+
 		//free the ID
 		delete $1;
 	}
@@ -582,7 +611,18 @@ variable:
 expression:
     primary_expression
     | expression T_OR expression %prec LOGIC_COMPARE_OPS
+	{
+		std::shared_ptr<IExpression> pExpr;
+		$$ = pExpr;
+	}
     | expression T_AND expression %prec LOGIC_COMPARE_OPS
+	{
+		std::shared_ptr<IExpression> pArg1($1);
+		std::shared_ptr<IExpression> pArg2($3);
+	
+		std::shared_ptr<IExpression> pAndExpr;
+			
+	}
     | expression T_LESS_EQUAL expression %prec MATH_COMPARE_OPS
     | expression T_GREATER_EQUAL  expression %prec MATH_COMPARE_OPS
     | expression T_LESS expression  %prec MATH_COMPARE_OPS
