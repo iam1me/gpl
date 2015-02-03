@@ -16,45 +16,50 @@ extern int line_count;            // current line in the input; from record.l
 #include "gpl_type.h"
 #include "symbol.h"
 #include "symbol_table.h"
+#include "expression.h"
+#include "value.h"
 #include <iostream>
 #include <string>
 
 Error error_handler;
 
-#define INSERT_SYMBOL(type, name)\
-	Symbol* pSymbol = NULL;\
-	switch(type)\
-	{\
-		case INT:\
-			pSymbol = new Symbol(name, 42);\
-			break;\
-		\
-		case DOUBLE:\
-			pSymbol = new Symbol(name, 3.14159);\
-			break;\
-		\
-		case STRING:\
-		{\
-			pSymbol = new Symbol(name, std::string("Hello world"));\
-			break;\
-		}\
-		default:\
-			std::string err = "Failed to Insert Symbol. Unrecognized Type: ";\
-			err += gpl_type_to_string(type);\
-			throw std::runtime_error(err);\
-			break;\
-	}\
-	\
-	bool result = Symbol_table::instance()->insert_symbol(pSymbol);\
-	if(!result)\
-	{\
-		error_handler.error(Error::PREVIOUSLY_DECLARED_VARIABLE, name);\
-	}\
+bool InsertSymbol (Gpl_type type, std::string name, 
+			std::shared_ptr<GPLVariant> var)
+{
+	std::shared_ptr<Symbol> pSymbol;
+	switch(type)
+	{
+		case INT:
+			pSymbol.reset(new Symbol(name, 42));
+			break;
+		
+		case DOUBLE:
+			pSymbol.reset(new Symbol(name, 3.14159));
+			break;
+		
+		case STRING:
+		{
+			pSymbol.reset(new Symbol(name, std::string("Hello world")));
+			break;
+		}
+		default:
+			std::string err = "Failed to Insert Symbol. Unrecognized Type: ";
+			err += gpl_type_to_string(type);
+			throw std::runtime_error(err);
+			break;
+	}
+	
+	bool result = Symbol_table::instance()->insert_symbol(pSymbol);
+	if(!result)
+	{
+		error_handler.error(Error::PREVIOUSLY_DECLARED_VARIABLE, name);
+	}
+}
 
 
 bool is_symbol_defined(std::string name)
 {
-	const Symbol* pSymbol = Symbol_table::instance()->find_symbol(name);
+	std::shared_ptr<Symbol> pSymbol = Symbol_table::instance()->find_symbol(name);
 	if(pSymbol) return true;
 
 	// Check for the array version of this symbol
@@ -299,7 +304,8 @@ variable_declaration:
 		}
 		else
 		{		
-			INSERT_SYMBOL($1, *$2);
+			std::shared_ptr<GPLVariant> var;
+			InsertSymbol($1, *$2, var);
 		}
 		delete $2; // free ID
 	}
@@ -321,7 +327,8 @@ variable_declaration:
 				std::string name = *$2 + "[";
 				name += std::to_string(i) + "]";
 
-				INSERT_SYMBOL($1, name);
+				std::shared_ptr<GPLVariant> var;
+				InsertSymbol($1, name, var);
 			}
 		}
 		delete $2; // free ID

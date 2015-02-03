@@ -1,6 +1,11 @@
 #ifndef VALUE_H
 #define VALUE_H
 
+#include <memory>
+
+#include "GPLVariant.h"
+#include "symbol.h"
+
 // A value is either a constant or else a variable reference. There are 3 kinds
 // of variables: simple (int, string, char, animation_block), member variables
 // (obj.x, obj.drawing_order, etc), and array references (my_stuff[35]). In all
@@ -26,38 +31,31 @@ public:
 
 	virtual bool is_reference() = 0;
 	virtual bool is_constant() = 0;
-	virtual Symbol* get_reference() = 0;
+	virtual const std::shared_ptr<Symbol>& get_reference() = 0;
 
 protected:
-	virtual GPLVariant* get_variant() = 0;
-
-	template<class T>
-	T cast_value();
+	virtual const std::shared_ptr<GPLVariant>& get_variant() = 0;
 };
-
-// Specializations are implemented in the cpp
-template<class T>
-T IValue::cast_value()
-{
-	throw std::logic_error("Cast Exception");
-}
-
 
 class ConstantValue : public IValue
 {
 public:
-
+	ConstantValue(std::shared_ptr<GPLVariant> var);
+	virtual ~ConstantValue();
+	
 private:
-	GPLVariant _var;
+	std::shared_ptr<GPLVariant> _pVar;
 };
 
 
 class ReferenceValue: public IValue
 {
 public:
+	ReferenceValue(std::shared_ptr<Symbol> symbol);
+	virtual ~ReferenceValue();	
 
 private:
-	Symbol* _symbol;
+	std::shared_ptr<Symbol> _pSymbol;
 };
 
 #endif

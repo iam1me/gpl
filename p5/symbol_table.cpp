@@ -9,10 +9,6 @@ Symbol_table::Symbol_table()
 
 Symbol_table::~Symbol_table()
 {
-	for(SymbolMap::iterator it = _symbols.begin(); it != _symbols.end(); it++)
-	{
-		delete it->second;
-	}
 	_symbols.clear();
 }
 
@@ -22,14 +18,15 @@ Symbol_table* Symbol_table::instance()
 	return _pTable;
 }
 
-Symbol* Symbol_table::find_symbol(const std::string& name) const
+std::shared_ptr<Symbol> Symbol_table::find_symbol
+		(const std::string& name) const
 {
 	SymbolMap::const_iterator it = _symbols.find(name);
 	if(it != _symbols.cend()) return it->second;
 	else return NULL;
 }
 
-bool Symbol_table::insert_symbol(Symbol* pSymbol)
+bool Symbol_table::insert_symbol(std::shared_ptr<Symbol> pSymbol)
 {
 	if(!pSymbol)
 	{
@@ -45,7 +42,7 @@ void Symbol_table::print(std::ostream& out) const
 {
 	for(SymbolMap::const_iterator it = _symbols.cbegin(); it != _symbols.cend(); it++)
 	{
-		const Symbol* pCur = it->second;
+		const std::shared_ptr<Symbol>& pCur = it->second;
 		out << pCur->to_string() << "\n";
 	}	
 }

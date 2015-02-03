@@ -2,7 +2,6 @@
 
 Symbol::~Symbol()
 {
-	if(_pvar) delete _pvar;
 }
 
 const std::string& Symbol::get_name() const

@@ -2,6 +2,7 @@
 #define EXPRESSION_H
 
 #include <vector>
+#include <memory>
 
 #include "GPLVariant.h"
 #include "value.h"
@@ -25,13 +26,13 @@ class IExpression
 {
 public:
 	virtual ~IExpression();
-	virtual IValue eval() = 0 const;
+	virtual std::shared_ptr<IValue> eval() const = 0;
 
 	virtual int get_child_count() const;
-	virtual const IExpression* get_child(int ndx) const;
+	virtual const std::shared_ptr<IExpression>& get_child(int ndx) const;
 
 protected:
-	typedef std::vector<IExpression*> ExpressionList;
+	typedef std::vector<std::shared_ptr<IExpression>> ExpressionList;
 	virtual const ExpressionList& get_children() const = 0;
 };
 

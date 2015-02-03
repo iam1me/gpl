@@ -10,6 +10,8 @@
 #include <iostream>
 #include <string.h>
 #include <stdexcept>
+#include <memory>
+
 #include "GPLVariant.h"
 #include "gpl_assert.h"
 
@@ -30,14 +32,14 @@ public:
 
 private:
 	std::string _name;
-	GPLVariant* _pvar;
+	std::shared_ptr<GPLVariant> _pvar;
 };
 
 template<class T>
 Symbol::Symbol(const std::string& name, const T& val)
 {
 	_name = name;
-	_pvar = new GPLVariant(val);
+	_pvar.reset(new GPLVariant(val));
 }
 
 template<class T>

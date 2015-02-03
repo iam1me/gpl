@@ -8,13 +8,13 @@
 class Symbol_table
 {
 public:
-	typedef std::map<std::string, Symbol*> SymbolMap;
+	typedef std::map<std::string, std::shared_ptr<Symbol>> SymbolMap;
 	virtual ~Symbol_table();
 	static Symbol_table* instance();
 
 	// returns null if not found
-	Symbol* find_symbol(const std::string& name) const;
-	bool insert_symbol(Symbol* pSymbol);
+	std::shared_ptr<Symbol> find_symbol(const std::string& name) const;
+	bool insert_symbol(std::shared_ptr<Symbol> pSymbol);
 
 	void print(std::ostream&) const;
 protected:
