@@ -187,12 +187,13 @@ bool is_symbol_defined(std::string name)
 	Example: "a > b <= c" ==> "(a > b) <= c"
 ********************************************************/
 %precedence MATH_COMPARE_OPS
-%left T_LESS                "<"
-%left T_GREATER             ">"
-%left T_LESS_EQUAL          "<="
-%left T_GREATER_EQUAL       ">="
-%left T_EQUAL               "=="
-%left T_NOT_EQUAL           "!="
+%token T_LESS                "<"
+%token T_GREATER             ">"
+%token T_LESS_EQUAL          "<="
+%token T_GREATER_EQUAL       ">="
+%token T_EQUAL               "=="
+%token T_NOT_EQUAL           "!="
+%left T_LESS T_GREATER T_LESS_EQUAL T_GREATER_EQUAL T_EQUAL T_NOT_EQUAL
 
 /********************************************************
 	Simple Mathematical Operators
@@ -202,6 +203,7 @@ bool is_symbol_defined(std::string name)
 %left MATH_SIMPLE_OPS
 %token T_PLUS  "+"
 %token T_MINUS "-"
+%left T_PLUS T_MINUS
 
 /********************************************************
 	Complex Mathematical Operators
@@ -209,18 +211,21 @@ bool is_symbol_defined(std::string name)
 	Example: "a * b / c" ==> "(a * b) / c"
 ********************************************************/
 %precedence MATH_COMPLEX_OPS
-%left T_ASTERISK            "*"
-%left T_DIVIDE              "/"
-%left T_MOD                 "%"
+%token T_ASTERISK            "*"
+%token T_DIVIDE              "/"
+%token T_MOD                 "%"
+%left T_ASTERISK T_DIVIDE T_MOD
+
 
 /********************************************************
 	Unary Operators
-	Precedence Level 6. No associativity.
+	Precedence Level 6.
 ********************************************************/
 %precedence UNARY_OPS
-%nonassoc T_PLUS_PLUS           "++"
-%nonassoc T_MINUS_MINUS         "--"
-%nonassoc T_NOT                 "!"
+%token T_PLUS_PLUS           "++"
+%token T_MINUS_MINUS         "--"
+%token T_NOT                 "!"
+%nonassoc T_PLUS_PLUS T_MINUS_MINUS T_NOT
 
 /********************************************************
 	Scope Operators
@@ -249,9 +254,11 @@ bool is_symbol_defined(std::string name)
 *******************************************************/
 %precedence IF_NO_ELSE		"if-then"
 %precedence IF_ELSE		"if-then-else"
-%nonassoc T_IF                  "if"
-%nonassoc T_FOR                 "for"
-%nonassoc T_ELSE                "else"
+%token T_IF                  "if"
+%token T_FOR                 "for"
+%token T_ELSE                "else"
+%nonassoc T_IF T_FOR
+%nonassoc T_ELSE
 
 // special token that does not match any production
 // used for characters that are not part of the language
