@@ -46,6 +46,9 @@ class ConstantValue : public IValue
 {
 public:
 	ConstantValue(std::shared_ptr<GPLVariant> var);
+	ConstantValue(int val);
+	ConstantValue(double val);
+	ConstantValue(std::string val);
 	virtual ~ConstantValue();
 	
 	Gpl_type get_type() const;

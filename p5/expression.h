@@ -14,7 +14,7 @@ class IExpression;
 class ValueExpression;
 class ArrayReferenceExpression;
 class MemberReferenceExpression; //Implement later
-class FunctionalExpression; //Implement Later
+class OperationalExpression;
 
 typedef std::vector<std::shared_ptr<IExpression>> ExpressionList;
 
@@ -92,5 +92,23 @@ private:
 	Gpl_type _type;
 };
 
+
+class OperationalExpression
+{
+public:
+	OperationalExpression(std::shared_ptr<IExpression> pArg1, Operator_type op);
+	OperationalExpression(std::shared_ptr<IExpression> pArg1, Operator_type op, std::shared_ptr<IExpression> pArg2);
+	~OperationalExpression();
+
+	std::shared_ptr<IValue> eval() const;
+protected:
+	const ExpressionList& get_children();
+
+private:
+	bool _bUnary;
+	ExpressionList _children;
+	Gpl_type _type;
+	Operator_type _op;
+};
 
 #endif
