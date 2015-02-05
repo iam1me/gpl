@@ -419,15 +419,21 @@ variable_declaration:
 simple_type:
     T_INT
 	{
+		GPL_BLOCK_BEGIN("simple_type[0]: T_INT")
 		$$ = INT;
+		GPL_BLOCK_END()
 	}
     | T_DOUBLE
 	{
+		GPL_BLOCK_BEGIN("simple_type[1]: T_DOUBLE")
 		$$ = DOUBLE;
+		GPL_BLOCK_END()
 	}
     | T_STRING
 	{
+		GPL_BLOCK_BEGIN("simple_type[2]: T_STRING")
 		$$ = STRING;
+		GPL_BLOCK_END()
 	}
     ;
 

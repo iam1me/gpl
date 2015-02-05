@@ -22,6 +22,9 @@ class IValue;
 class Symbol
 {
 public:
+	// The value can be nullptr. If so, the variable is declared but not initialized
+	Symbol(const std::string& name, Gpl_type type, std::shared_ptr<IValue> val);
+
 	template<class T>
 	Symbol(const std::string& name, const T& val);
 	~Symbol();
@@ -35,13 +38,14 @@ public:
 	std::shared_ptr<IValue> get_value();	
 	void set_value(std::shared_ptr<IValue> pval);
 
-	std::shared_ptr<GPLVariant> get_variant();
+	//std::shared_ptr<GPLVariant> get_variant();
 
 	std::string to_string() const;
 
 private:
 	std::string _name;
-	std::shared_ptr<GPLVariant> _pvar;
+	Gpl_type _type;
+	std::shared_ptr<IValue> _pval;
 };
 
 template<class T>

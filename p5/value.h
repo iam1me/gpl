@@ -8,8 +8,10 @@
 
 // Forward Declarations
 class IValue;
+class IVariable;
 class ConstantValue;
 class ReferenceValue;
+class VariableValue;
 
 // A value is either a constant or else a variable reference. There are 3 kinds
 // of variables: simple (int, string, char, animation_block), member variables
@@ -42,6 +44,28 @@ protected:
 	virtual std::shared_ptr<GPLVariant> get_variant() const = 0;
 };
 
+// An interface for values of simple types that can be modified
+// the value can be changed but not the type
+class IVariable : public IValue
+{
+public:
+	IVariable(Gpl_type type);
+	virtual ~IVariable();
+
+	Gpl_type get_type() const;
+	bool is_constant() const;
+	bool is_reference() const;
+	std::shared_ptr<Symbol> get_reference() const;
+
+	virtual void set_value(int val);
+	virtual void set_value(double val);
+	virtual void set_value(std::string val);
+	// Add other types later, if necessary	
+
+private:
+	Gpl_type _type;
+};
+
 class ConstantValue : public IValue
 {
 public:
@@ -64,6 +88,9 @@ private:
 	std::shared_ptr<GPLVariant> _pVar;
 };
 
+// Points to a symbol. This reference may not be changed.
+// If you need to edit the underlying GPLVariant, do so
+// by means of the referenced Symbol
 class ReferenceValue: public IValue
 {
 public:
@@ -80,6 +107,24 @@ protected:
 
 private:
 	std::shared_ptr<Symbol> _pSymbol;
+};
+
+
+// A variable value has a simple type (int, double, string) but
+// can modify its value after construction. 
+class VariableValue: public IVariable
+{
+public:
+	VariableValue(int val);
+	VariableValue(double val);
+	VariableValue(std::string val);
+	virtual ~VariableValue();
+
+protected:
+	std::shared_ptr<GPLVariant> get_variant() const;
+
+private:
+	std::shared_Ptr<GPLVariant> _pvar;
 };
 
 #endif

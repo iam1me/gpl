@@ -5,6 +5,18 @@ Symbol::~Symbol()
 {
 }
 
+Symbol::Symbol(const std::string& name, std::shared_ptr<IValue> val)
+{
+	_name = name;
+	_pval = val;
+}
+
+Symbol::Symbol(const std::string& name, Gpl_type type)
+{
+	_name = name;
+	_pval.reset(new ConstantValue
+}
+
 const std::string& Symbol::get_name() const
 {
 	return _name;

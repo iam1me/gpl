@@ -52,31 +52,84 @@ std::string IValue::get_string() const
 		throw std::runtime_error("IValue::get_string - variant is NULL");
 	}
 
-	/*switch(var->get_type())
+	return var->to_string();
+}
+
+IVariable::IVariable(Gpl_type type)
+{
+	_type = type;
+}
+
+IVariable::~IVariable()
+{}
+
+bool IVariable::is_constant() const
+{ return false; }
+
+Gpl_type IVariable::get_type() const
+{ return _type; }
+	
+bool IVariable::is_reference() const
+{ return false; }
+
+std::shared_ptr<Symbol> get_reference() const
+{ return nullptr; }
+
+void IVariable::set_value(int val)
+{
+	switch(_type)
 	{
 		case INT:
-		{
-			int val = var->get_value<int>();
-			return std::to_string(val);
-		}
-		case DOUBLE:
-		{
-			double val = var->get_value<double>();
-			char buff[256];
-			sprintf(buff, "%g", val);
-			return std::string(buff);
-		}
-		case STRING:
-		{
-			return var->get_value<std::string>();
-		}			
-		default:
-		{
-			throw std::logic_error("IValue::get_string - invalid cast");
-		}
-	}*/
+			get_variant()->set_value<int>(val);
+			break;
 
-	return var->to_string();
+		case DOUBLE:
+			get_variant()->set_value<double>((double)val);
+			break;
+
+		case STRING:
+			get_variant()->set_value<std::string>(std::to_string(val));
+			break;
+
+		default:
+			throw std::logic_error("IVariable::set_value(int)  - Invalid Type");
+	}
+}
+
+void IVariable::set_value(double val)
+{
+	switch(_type)
+	{
+		case INT:
+			get_variant()->set_value<int>((int)val);
+			break;
+
+		case DOUBLE:
+			get_variant()->set_value<double>(val);
+			break;
+
+		case STRING:
+			char buf[256];
+			sprintf(buf, "%g", val);
+			get_variant()->set_value<std::string>(std::string(buf));
+			break;
+
+		default:
+			throw std::logic_error("IVariable::set_value(double) - Invalid Type");
+	}
+}
+
+void IVariable::set_value(std::string val)
+{
+	switch(_type)
+	{
+		case STRING:
+			get_variant()->set_value<std::string>(val);
+			break;
+
+		default:
+			throw std::logic_error("IVariable::set_value(string) - Invalid Type");
+	}
 }
 
 ConstantValue::ConstantValue(std::shared_ptr<GPLVariant> pVar)
@@ -168,4 +221,33 @@ std::shared_ptr<Symbol> ReferenceValue::get_reference() const
 std::shared_ptr<GPLVariant> ReferenceValue::get_variant() const
 {
 	return _pSymbol->get_variant();
+}
+
+
+VariableValue::VariableValue(int val)
+	: IVariableValue(INT)
+{
+	_pvar.reset(new GPLVariant(val));	
+}
+
+VariableValue::VariableValue(double val)
+	: IVariableValue(DOUBLE)
+{
+	_pvar.reset(new GPLVariant(val));
+}
+
+VariableValue::VariableValue(std::string val)
+	: IVariableValue(STRING)
+{
+	_pvar.reset(new GPLVariant(val));
+}
+
+VariableValue::~VariableValue()
+{
+
+}
+
+std::shared_ptr<GPLVariant> VariableValue::get_variant() const
+{
+	return _pvar;
 }

@@ -17,6 +17,8 @@
 #ifndef PARSER_H
 #define PARSER_H
 
+#define _DEBUG
+
 // for each type used in the union, you will need to 
 // put the appropriate include here
 // For example, the union must hold a C++ string, so <string> is included
@@ -33,7 +35,6 @@
 
 #include <iostream>
 
-//#define _DEBUG
 
 #ifdef _DEBUG
 #define TRACE_VERBOSE(msg)\
