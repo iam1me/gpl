@@ -242,7 +242,16 @@ graphics_flag = true;
 
   cout << "gpl.cpp::main() Calling yyparse()" << endl << endl;
 
-  int parse_result = yyparse();
+  int parse_result = -1;
+  try
+  {
+ 	 parse_result = yyparse();
+  }
+  catch(...)
+  {
+  	cout << "PARSE EXCEPTION LINE " << endl;
+	throw;
+  }
 
   cout << endl << "gpl.cpp::main() after call to yyparse()."<<endl<< endl;
 

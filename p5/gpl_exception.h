@@ -26,6 +26,27 @@ private:
 	std::string _args[3];		
 };
 
+class undeclared_variable : public gpl_exception
+{
+public:
+	undeclared_variable(std::string var_name);
+	virtual ~undeclared_variable();
+	std::string get_variable_name() const;
+protected:
+	std::string _varName;
+};
+
+class previously_declared_variable : public gpl_exception
+{
+public:
+	previously_declared_variable(std::string var_name);
+	~previously_declared_variable();
+	std::string get_variable_name() const;
+
+protected:
+	std::string _varName;
+};
+
 class invalid_operand_type : public gpl_exception
 {
 public:
@@ -48,5 +69,33 @@ public:
 	virtual ~object_operand_expected();
 };
 
+class invalid_array_size : public gpl_exception
+{
+public:
+	invalid_array_size();
+	virtual ~invalid_array_size();
+};
+
+class index_out_of_bounds : public gpl_exception
+{
+public:
+	index_out_of_bounds();
+	virtual ~index_out_of_bounds();
+};
+
+class invalid_index_type : public gpl_exception
+{
+public:
+	invalid_index_type();
+	virtual ~invalid_index_type();
+};
+
+class not_an_array : public gpl_exception
+{
+public:
+	not_an_array(std::string var);
+	virtual ~not_an_array();
+	std::string get_variable_name();
+};
 
 #endif

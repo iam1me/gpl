@@ -83,7 +83,7 @@ std::string GPLVariant::to_string() const
 		case DOUBLE:
 		{
 			char buff[256];
-			sprintf(buff, "%.5f", _val_double);
+			sprintf(buff, "%g", _val_double);
 			ret += buff;
 			break;
 		}

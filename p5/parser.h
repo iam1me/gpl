@@ -31,4 +31,22 @@
 
 #include "y.tab.h"
 
+#include <iostream>
+
+//#define _DEBUG
+
+#ifdef _DEBUG
+#define TRACE_VERBOSE(msg)\
+	std::cout << "TRACE_VERBOSE: " << msg << " (file: " << __FILE__ \
+		<< ", line #" << __LINE__ << ")" <<   std::endl;
+
+#define TRACE_ERROR(msg)\
+	std::cerr << "TRACE_ERROR: " << msg << " (file: " << __FILE__ \
+		<< ", line #" << __LINE__ << ")" << std::endl;
+#else
+#define TRACE_VERBOSE(msg) {;}
+#define TRACE_ERROR(msg) {;}
+#endif
+
+
 #endif // #ifndef PARSER_H

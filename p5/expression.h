@@ -93,7 +93,7 @@ private:
 };
 
 
-class OperationalExpression
+class OperationalExpression : public IExpression
 {
 public:
 	OperationalExpression(std::shared_ptr<IExpression> pArg1, Operator_type op);
@@ -101,8 +101,9 @@ public:
 	~OperationalExpression();
 
 	std::shared_ptr<IValue> eval() const;
+	Gpl_type get_type() const;
 protected:
-	const ExpressionList& get_children();
+	const ExpressionList& get_children() const;
 
 private:
 	bool _bUnary;

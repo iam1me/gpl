@@ -1,6 +1,7 @@
 #include "expression.h"
 #include "symbol_table.h"
 #include "gpl_exception.h"
+#include "parser.h"
 
 IExpression::~IExpression()
 {
@@ -24,6 +25,7 @@ std::shared_ptr<IExpression> IExpression::get_child(int ndx) const
 }
 
 ValueExpression::ValueExpression(std::shared_ptr<IValue> val)
+	: IExpression()
 {
 	if(!val)
 	{
@@ -38,6 +40,7 @@ ValueExpression::~ValueExpression()
 
 std::shared_ptr<IValue> ValueExpression::eval() const
 {
+	TRACE_VERBOSE("ValueExpression::eval()")
 	return _pVal;
 }
 
@@ -76,6 +79,7 @@ ArrayReferenceExpression::~ArrayReferenceExpression()
 
 std::shared_ptr<IValue> ArrayReferenceExpression::eval() const
 {	
+	TRACE_VERBOSE("ArrayReferenceExpression::eval()")
 	const std::shared_ptr<IExpression>& ndx_expr = _children[0];
 	const std::shared_ptr<IValue>& ndx_val = ndx_expr->eval();
 
@@ -87,9 +91,10 @@ std::shared_ptr<IValue> ArrayReferenceExpression::eval() const
 
 	if(!pSymbol)
 	{
-		throw std::runtime_error("Array Index Out Of Bounds");
+		throw index_out_of_bounds();
 	}
 
+	TRACE_VERBOSE("ArrayReferenceExpression::eval() - Symbol found. Returning ReferenceValue")
 	std::shared_ptr<IValue> ret(new ReferenceValue(pSymbol));
 	return ret;
 }
@@ -111,6 +116,7 @@ Gpl_type ArrayReferenceExpression::get_type() const
 }
 
 OperationalExpression::OperationalExpression(std::shared_ptr<IExpression> pArg1, Operator_type op)
+	: IExpression()
 {
 	if(!pArg1)
 	{
@@ -179,7 +185,9 @@ OperationalExpression::OperationalExpression(std::shared_ptr<IExpression> pArg1,
 	_bUnary = true;
 }
 
-OperationalExpression::OperationalExpression (std::shared_ptr<IExpression> pArg1, 			Operator_type op, std::shared_ptr<IExpression> pArg2)
+OperationalExpression::OperationalExpression (std::shared_ptr<IExpression> pArg1, 
+		Operator_type op, std::shared_ptr<IExpression> pArg2)
+	: IExpression()
 {
 	_bUnary = false;
 	if(!pArg1 || !pArg2)
@@ -325,13 +333,32 @@ OperationalExpression::OperationalExpression (std::shared_ptr<IExpression> pArg1
 OperationalExpression::~OperationalExpression()
 {}
 
+const ExpressionList& OperationalExpression::get_children() const
+{
+	return _children;
+}
+
+Gpl_type OperationalExpression::get_type() const
+{
+	return _type;
+}
+
 std::shared_ptr<IValue> OperationalExpression::eval() const
 {
-	std::shared_ptr<IValue> pret;
+	TRACE_VERBOSE("OperationalExpression::eval() - Operator: '" << operator_to_string(_op)
+			<< "' Type: " << gpl_type_to_string(get_type()))
+
+	std::shared_ptr<IValue> pret = nullptr;
 
 	std::shared_ptr<IValue> pArg1, pArg2;
 	pArg1 = _children[0]->eval();
-	if(!_bUnary) pArg2 = _children[1]->eval();
+	TRACE_VERBOSE("OperationalExpression::eval() - Arg1 Type: " << gpl_type_to_string(pArg1->get_type()))
+
+	if(!_bUnary)
+	{
+		pArg2 = _children[1]->eval();
+		TRACE_VERBOSE("OperationalExpression::eval() - Arg2 Type: " << gpl_type_to_string(pArg2->get_type()))
+	}
 
 	std::shared_ptr<GPLVariant> pvar;
 	switch(_op)
@@ -385,6 +412,7 @@ std::shared_ptr<IValue> OperationalExpression::eval() const
 				default:
 					break;
 			}
+			break;
 
 		case MULTIPLY:
 			switch(_type)
@@ -394,6 +422,7 @@ std::shared_ptr<IValue> OperationalExpression::eval() const
 					int temp = pArg1->get_int();
 					temp *= pArg2->get_int();
 					pret.reset(new ConstantValue(temp));
+					TRACE_VERBOSE("MULTIPLY. pret->get_int(): " << pret->get_int())
 					break;
 				}
 				case DOUBLE:
@@ -406,6 +435,7 @@ std::shared_ptr<IValue> OperationalExpression::eval() const
 				default:
 					break;
 			}
+			break;
 
 		case DIVIDE:
 			switch(_type)
@@ -425,7 +455,8 @@ std::shared_ptr<IValue> OperationalExpression::eval() const
 				}
 				default:
 					break;
-			}	
+			}
+			break;	
 
 		case MOD:
 			switch(_type)
@@ -439,14 +470,15 @@ std::shared_ptr<IValue> OperationalExpression::eval() const
 				default:
 					break;
 			}
+			break;
 
 		default:
-			throw std::invalid_argument("Operator not Implemented");
+			throw std::logic_error("Operator not Implemented");
 	}
 
 	if(!pret)
 	{
-		throw new std::runtime_error("Operator not Implemented for the requested return type");
+		throw new std::logic_error("Operator not Implemented for the requested return type");
 	}
 
 	return pret;
