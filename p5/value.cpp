@@ -52,7 +52,7 @@ std::string IValue::get_string() const
 		throw std::runtime_error("IValue::get_string - variant is NULL");
 	}
 
-	switch(var->get_type())
+	/*switch(var->get_type())
 	{
 		case INT:
 		{
@@ -63,7 +63,7 @@ std::string IValue::get_string() const
 		{
 			double val = var->get_value<double>();
 			char buff[256];
-			sprintf(buff, "%.5f", val);
+			sprintf(buff, "%g", val);
 			return std::string(buff);
 		}
 		case STRING:
@@ -74,7 +74,9 @@ std::string IValue::get_string() const
 		{
 			throw std::logic_error("IValue::get_string - invalid cast");
 		}
-	}
+	}*/
+
+	return var->to_string();
 }
 
 ConstantValue::ConstantValue(std::shared_ptr<GPLVariant> pVar)

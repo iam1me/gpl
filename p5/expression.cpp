@@ -40,7 +40,7 @@ ValueExpression::~ValueExpression()
 
 std::shared_ptr<IValue> ValueExpression::eval() const
 {
-	TRACE_VERBOSE("ValueExpression::eval()")
+	//TRACE_VERBOSE("ValueExpression::eval()")
 	return _pVal;
 }
 
@@ -427,9 +427,11 @@ std::shared_ptr<IValue> OperationalExpression::eval() const
 				}
 				case DOUBLE:
 				{
-					int temp = pArg1->get_double();
+					double temp = pArg1->get_double();
 					temp *= pArg2->get_double();
 					pret.reset(new ConstantValue(temp));
+					TRACE_VERBOSE("MULTIPLY. temp: " << temp)
+					TRACE_VERBOSE("pret->get_double(): " << pret->get_double())
 					break;
 				}
 				default:
