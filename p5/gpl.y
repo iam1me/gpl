@@ -781,7 +781,7 @@ expression:
 		GPL_BLOCK_BEGIN("expression[2]")
 		std::shared_ptr<IExpression> pLHS($1);
 		std::shared_ptr<IExpression> pRHS($3);
-		$$ = new LessEqualExpression(pLHS, pRHS);
+		$$ = new LessThanEqualExpression(pLHS, pRHS);
 		GPL_BLOCK_END()
 	}
     | expression T_GREATER_EQUAL  expression %prec MATH_COMPARE_OPS
@@ -789,7 +789,7 @@ expression:
 		GPL_BLOCK_BEGIN("expression[3]")
 		std::shared_ptr<IExpression> pLHS($1);
 		std::shared_ptr<IExpression> pRHS($3);
-		$$ = new GreaterEqualExpression(pLHS, pRHS);
+		$$ = new GreaterThanEqualExpression(pLHS, pRHS);
 		GPL_BLOCK_END()
 	}
     | expression T_LESS expression  %prec MATH_COMPARE_OPS
@@ -797,7 +797,7 @@ expression:
 		GPL_BLOCK_BEGIN("expression[4]")
 		std::shared_ptr<IExpression> pLHS($1);
 		std::shared_ptr<IExpression> pRHS($3);
-		$$ = new LessExpression(pLHS, pRHS);
+		$$ = new LessThanExpression(pLHS, pRHS);
 		GPL_BLOCK_END()
 	}
     | expression T_GREATER  expression %prec MATH_COMPARE_OPS
@@ -805,7 +805,7 @@ expression:
 		GPL_BLOCK_BEGIN("expression[5]")
 		std::shared_ptr<IExpression> pLHS($1);
 		std::shared_ptr<IExpression> pRHS($3);
-		$$ = new GreaterExpression(pLHS, pRHS);
+		$$ = new GreaterThanExpression(pLHS, pRHS);
 		GPL_BLOCK_END()
 	}
     | expression T_EQUAL expression %prec MATH_COMPARE_OPS
@@ -867,7 +867,8 @@ expression:
     | T_MINUS  expression %prec UNARY_OPS
 	{
 		GPL_BLOCK_BEGIN("expression[12]")
-		std::shared_ptr<IExpression> pLHS(new ConstantExpression(-1));
+		std::shared_ptr<IValue> pVal(new ConstantValue(-1));
+		std::shared_ptr<IExpression> pLHS(new ValueExpression(pVal));
 		std::shared_ptr<IExpression> pRHS($2);
 		$$ = new MultiplyExpression(pLHS, pRHS);
 		GPL_BLOCK_END()
@@ -882,11 +883,47 @@ expression:
     | math_operator T_LPAREN expression T_RPAREN %prec SUB_EXPR_OPS
 	{
 		GPL_BLOCK_BEGIN("expression[14]")
-		std::shared_ptr<IExpression> pOperand($3);
-		switch(math_operator)
+		std::shared_ptr<IExpression> pArg($3);
+		switch($1)
 		{
 			case SIN:
-				$$ = new SinExpression(pOperand);
+				$$ = new SinExpression(pArg);
+				break;
+
+			case COS:
+				$$ = new CosExpression(pArg);
+				break;
+
+			case TAN:
+				$$ = new TanExpression(pArg);
+				break;
+
+			case ASIN:
+				$$ = new AsinExpression(pArg);
+				break;
+	
+			case ACOS:
+				$$ = new AcosExpression(pArg);
+				break;
+			
+			case ATAN:
+				$$ = new AtanExpression(pArg);
+				break;
+
+			case FLOOR:
+				$$ = new FloorExpression(pArg);
+				break;
+
+			case SQRT:
+				$$ = new SqrtExpression(pArg);
+				break;
+
+			case ABS:
+				$$ = new AbsoluteExpression(pArg);
+				break;
+
+			case RANDOM:
+				$$ = new RandomExpression(pArg);
 				break;
 
 			default:

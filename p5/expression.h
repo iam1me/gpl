@@ -43,6 +43,7 @@ class GreaterThanEqualExpression;
 
 // Logical Expressions
 class AndExpression;
+class OrExpression;
 class NotExpression;
 
 // Geometric Expressions
@@ -257,12 +258,141 @@ public:
 };
 
 
-class ATanExpression : public IOperationalExpression
+class AtanExpression : public IOperationalExpression
 {
 public:
-	ATanExpression(std::shared_ptr<IExpression> pArg1);
-	~ATanExpression();
+	AtanExpression(std::shared_ptr<IExpression> pArg1);
+	~AtanExpression();
 	std::shared_ptr<IValue> eval() const;
 	Gpl_type get_type() const { return DOUBLE; };
+};
+
+
+class SqrtExpression : public IOperationalExpression
+{
+public:
+	SqrtExpression(std::shared_ptr<IExpression> pArg1);
+	~SqrtExpression();
+	std::shared_ptr<IValue> eval() const;
+	Gpl_type get_type() const { return DOUBLE; };
+};
+
+
+
+class FloorExpression : public IOperationalExpression
+{
+public:
+	FloorExpression(std::shared_ptr<IExpression> pArg1);
+	~FloorExpression();
+	std::shared_ptr<IValue> eval() const;
+	Gpl_type get_type() const { return INT; };
+};
+
+
+class AbsoluteExpression : public IOperationalExpression
+{
+public:
+	AbsoluteExpression(std::shared_ptr<IExpression> pArg1);
+	~AbsoluteExpression();
+	std::shared_ptr<IValue> eval() const;
+	Gpl_type get_type() const { return _type; };
+private:
+	Gpl_type _type;
+};
+
+class RandomExpression : public IOperationalExpression
+{
+public:
+	RandomExpression(std::shared_ptr<IExpression> pArg1);
+	~RandomExpression();
+	std::shared_ptr<IValue> eval() const;
+	Gpl_type get_type() const { return INT; };
+};
+
+class EqualExpression : public IOperationalExpression
+{
+public:
+	EqualExpression(std::shared_ptr<IExpression> pArg1, std::shared_ptr<IExpression> pArg2);
+	~EqualExpression() {};
+	std::shared_ptr<IValue> eval() const;
+	Gpl_type get_type() const { return INT; };
+};
+
+class NotEqualExpression : public IOperationalExpression
+{
+public:
+	NotEqualExpression(std::shared_ptr<IExpression> pArg1, std::shared_ptr<IExpression> pArg2);
+	~NotEqualExpression() {};
+	std::shared_ptr<IValue> eval() const;
+	Gpl_type get_type() const { return INT; };
+};
+
+
+class LessThanExpression : public IOperationalExpression
+{
+public:
+	LessThanExpression(std::shared_ptr<IExpression> pArg1, std::shared_ptr<IExpression> pArg2);
+	~LessThanExpression() {};
+	std::shared_ptr<IValue> eval() const;
+	Gpl_type get_type() const { return INT; };
+};
+
+
+class LessThanEqualExpression : public IOperationalExpression
+{
+public:
+	LessThanEqualExpression(std::shared_ptr<IExpression> pArg1, std::shared_ptr<IExpression> pArg2);
+	~LessThanEqualExpression() {};
+	std::shared_ptr<IValue> eval() const;
+	Gpl_type get_type() const { return INT; };
+};
+
+
+class GreaterThanExpression : public IOperationalExpression
+{
+public:
+	GreaterThanExpression(std::shared_ptr<IExpression> pArg1, std::shared_ptr<IExpression> pArg2);
+	~GreaterThanExpression() {};
+	std::shared_ptr<IValue> eval() const;
+	Gpl_type get_type() const { return INT; };
+};
+
+
+class GreaterThanEqualExpression : public IOperationalExpression
+{
+public:
+	GreaterThanEqualExpression(std::shared_ptr<IExpression> pArg1, std::shared_ptr<IExpression> pArg2);
+	~GreaterThanEqualExpression() {};
+	std::shared_ptr<IValue> eval() const;
+	Gpl_type get_type() const { return INT; };
+};
+
+
+class AndExpression : public IOperationalExpression
+{
+public:
+	AndExpression(std::shared_ptr<IExpression> pArg1, std::shared_ptr<IExpression> pArg2);
+	~AndExpression() {};
+	std::shared_ptr<IValue> eval() const;
+	Gpl_type get_type() const { return INT; };
+};
+
+
+class OrExpression : public IOperationalExpression
+{
+public:
+	OrExpression(std::shared_ptr<IExpression> pArg1, std::shared_ptr<IExpression> pArg2);
+	~OrExpression() {};
+	std::shared_ptr<IValue> eval() const;
+	Gpl_type get_type() const { return INT; };
+};
+
+class NotExpression : public IOperationalExpression
+{
+public:
+	NotExpression(std::shared_ptr<IExpression> pArg1);
+	~NotExpression() {};
+	std::shared_ptr<IValue> eval() const;
+	Gpl_type get_type() const { return INT; };
 };
 #endif
