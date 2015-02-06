@@ -233,17 +233,20 @@ std::shared_ptr<IValue> MinusExpression::eval() const
 	std::shared_ptr<IValue> pval2 = get_child(1)->eval();
 	std::shared_ptr<IValue> pret = nullptr;
 
+	//TRACE_VERBOSE("MINUS Type: " << gpl_type_to_string(_type))
 	if(_type == INT)
 	{
-		int result = pval1->get_int() + pval2->get_int();
+		int result = pval1->get_int() - pval2->get_int();
 		pret.reset(new ConstantValue(result));
 	}
 	else // DOUBLE
 	{
-		double result = pval2->get_double() + pval2->get_double();
+		double result = pval1->get_double() - pval2->get_double();
 		pret.reset(new ConstantValue(result));
 	}
-
+	
+	//TRACE_VERBOSE("MINUS(" << pval1->get_string() << ", " << pval2->get_string()
+	//		<< "): " << pret->get_string())
 	return pret;
 }
 
@@ -325,7 +328,9 @@ DivideExpression::DivideExpression(std::shared_ptr<IExpression> pArg1, std::shar
 			break;
 		case DOUBLE:
 			_type = DOUBLE;
+			break;
 		default:
+			TRACE_ERROR("DivideExpression: Invalid right operand type " << gpl_type_to_string(pArg2->get_type()))
 			throw invalid_operand_type(DIVIDE, false);
 	}
 
@@ -581,6 +586,8 @@ std::shared_ptr<IValue> SqrtExpression::eval() const
 {
 	std::shared_ptr<IValue> pval = get_child(0)->eval();
 	double result = sqrt(pval->get_double());
+
+	TRACE_VERBOSE("SQRT(" << pval->get_double() << "): " << result);
 	return std::shared_ptr<IValue>(new ConstantValue(result));
 }
 
@@ -667,7 +674,7 @@ std::shared_ptr<IValue> RandomExpression::eval() const
 	std::shared_ptr<IValue> pval = get_child(0)->eval();
 
 	int result = abs(floor(pval->get_double()));
-	std::uniform_int_distribution<int> distribution(0, result);
+	std::uniform_int_distribution<int> distribution(0, result? result - 1 : 0);
 	result = distribution(generator);
 
 	return std::shared_ptr<IValue>(new ConstantValue(result));

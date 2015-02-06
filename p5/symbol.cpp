@@ -26,6 +26,7 @@ Symbol::Symbol(const std::string& name, Gpl_type type)
 		default:
 			throw std::invalid_argument("Symbol::Symbol - Invalid Type: " + gpl_type_to_string(type));
 	}
+	_type = type;
 }
 
 Symbol::Symbol(const std::string& name, Gpl_type type, std::shared_ptr<IValue> val)
