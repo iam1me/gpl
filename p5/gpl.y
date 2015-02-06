@@ -47,16 +47,16 @@ std::shared_ptr<Symbol> InsertSymbol (std::string name, Gpl_type type,
 	switch(type)
 	{
 		case INT:
-			pSymbol.reset(new Symbol(name, pval));
+			pSymbol.reset(new Symbol(name, type, pval));
 			break;
 		
 		case DOUBLE:
-			pSymbol.reset(new Symbol(name, pval));
+			pSymbol.reset(new Symbol(name, type, pval));
 			break;
 		
 		case STRING:
 		{
-			pSymbol.reset(new Symbol(name, pval));
+			pSymbol.reset(new Symbol(name, type, pval));
 			break;
 		}
 		default:

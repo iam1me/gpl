@@ -23,7 +23,7 @@ class Symbol
 {
 public:
 	Symbol(const std::string& name, Gpl_type type); // Declares a symbol, but doesn't initialize it
-	Symbol(const std::string& name, std::shared_ptr<IValue> val); // Declares & initializes. val can't be null
+	Symbol(const std::string& name, Gpl_type type, std::shared_ptr<IValue> val); // Declares & initializes. val can't be null
 
 	//template<class T>
 	//Symbol(const std::string& name, const T& val);
@@ -45,6 +45,7 @@ public:
 private:
 	std::string _name;
 	std::shared_ptr<IValue> _pval;
+	Gpl_type _type;
 	bool _bInitialized;
 };
 

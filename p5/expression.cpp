@@ -8,6 +8,7 @@
 
 #define PI 3.14159265
 #define CONVERT_TO_RADIANS(deg) (deg)*PI/180
+#define CONVERT_TO_DEGREES(rad) (rad)*180/PI
 	
 
 IExpression::~IExpression()
@@ -289,12 +290,12 @@ std::shared_ptr<IValue> MultiplyExpression::eval() const
 
 	if(_type == INT)
 	{
-		int result = pval1->get_int() + pval2->get_int();
+		int result = pval1->get_int() * pval2->get_int();
 		pret.reset(new ConstantValue(result));
 	}
 	else
 	{
-		double result = pval1->get_double() + pval2->get_double();
+		double result = pval1->get_double() * pval2->get_double();
 		pret.reset(new ConstantValue(result));
 	}
 
@@ -507,8 +508,9 @@ AsinExpression::~AsinExpression()
 std::shared_ptr<IValue> AsinExpression::eval() const
 {
 	std::shared_ptr<IValue> pval = get_child(0)->eval();
-	double result = CONVERT_TO_RADIANS(pval->get_double());
+	double result = pval->get_double();
 	result = asin(result);
+	result = CONVERT_TO_DEGREES(result);
 	return std::shared_ptr<IValue>(new ConstantValue(result));
 }
 
@@ -530,8 +532,9 @@ AcosExpression::~AcosExpression()
 std::shared_ptr<IValue> AcosExpression::eval() const
 {
 	std::shared_ptr<IValue> pval = get_child(0)->eval();
-	double result = CONVERT_TO_RADIANS(pval->get_double());
+	double result = pval->get_double();
 	result = acos(result);
+	result = CONVERT_TO_DEGREES(result);
 	return std::shared_ptr<IValue>(new ConstantValue(result));
 }
 
@@ -553,8 +556,9 @@ AtanExpression::~AtanExpression()
 std::shared_ptr<IValue> AtanExpression::eval() const
 {
 	std::shared_ptr<IValue> pval = get_child(0)->eval();
-	double result = CONVERT_TO_RADIANS(pval->get_double());
+	double result = pval->get_double();
 	result = atan(result);
+	result = CONVERT_TO_DEGREES(result);
 	return std::shared_ptr<IValue>(new ConstantValue(result));
 }
 

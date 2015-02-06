@@ -28,7 +28,7 @@ Symbol::Symbol(const std::string& name, Gpl_type type)
 	}
 }
 
-Symbol::Symbol(const std::string& name, std::shared_ptr<IValue> val)
+Symbol::Symbol(const std::string& name, Gpl_type type, std::shared_ptr<IValue> val)
 {
 	if(!val)
 	{
@@ -36,6 +36,7 @@ Symbol::Symbol(const std::string& name, std::shared_ptr<IValue> val)
 	}
 
 	_name = name;
+	_type = type;
 	_pval = val;
 }
 
@@ -46,15 +47,15 @@ const std::string& Symbol::get_name() const
 
 Gpl_type Symbol::get_type() const
 {
-	return _pval->get_type();
+	return _type;
 }
 
 std::string Symbol::to_string() const
 {
-	std::string ret = gpl_type_to_string(_pval->get_type());
+	std::string ret = gpl_type_to_string(_type);
 	ret += " " + _name + " ";
 
-	if(_pval->get_type() == STRING)
+	if(_type == STRING)
 	{
 		// Put quotes around string literals
 		ret += "\"" + _pval->get_string() + "\"";
@@ -94,7 +95,7 @@ void Symbol::set_value(const std::shared_ptr<IValue>& val)
 	}
 
 	IVariable* pTemp = (IVariable*)_pval.get();
-	switch(_pval->get_type())
+	switch(_type)
 	{
 		case INT:
 			pTemp->set_value(val->get_int());
