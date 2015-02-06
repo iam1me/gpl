@@ -72,7 +72,7 @@ Gpl_type IVariable::get_type() const
 bool IVariable::is_reference() const
 { return false; }
 
-std::shared_ptr<Symbol> get_reference() const
+std::shared_ptr<Symbol> IVariable::get_reference() const
 { return nullptr; }
 
 void IVariable::set_value(int val)
@@ -220,24 +220,39 @@ std::shared_ptr<Symbol> ReferenceValue::get_reference() const
 
 std::shared_ptr<GPLVariant> ReferenceValue::get_variant() const
 {
-	return _pSymbol->get_variant();
+	return nullptr;
+}
+	
+int ReferenceValue::get_int() const
+{
+	return _pSymbol->get_value()->get_int();
+}
+
+double ReferenceValue::get_double() const
+{
+	return _pSymbol->get_value()->get_double();
+}
+
+std::string ReferenceValue::get_string() const
+{
+	return _pSymbol->get_value()->get_string();
 }
 
 
 VariableValue::VariableValue(int val)
-	: IVariableValue(INT)
+	: IVariable(INT)
 {
 	_pvar.reset(new GPLVariant(val));	
 }
 
 VariableValue::VariableValue(double val)
-	: IVariableValue(DOUBLE)
+	: IVariable(DOUBLE)
 {
 	_pvar.reset(new GPLVariant(val));
 }
 
 VariableValue::VariableValue(std::string val)
-	: IVariableValue(STRING)
+	: IVariable(STRING)
 {
 	_pvar.reset(new GPLVariant(val));
 }

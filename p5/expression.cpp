@@ -1,7 +1,12 @@
+#include <math.h>
 #include "expression.h"
 #include "symbol_table.h"
 #include "gpl_exception.h"
 #include "parser.h"
+
+#define PI 3.14159265
+#define CONVERT_TO_RADIANS(deg) (deg)*PI/180
+	
 
 IExpression::~IExpression()
 {
@@ -9,19 +14,27 @@ IExpression::~IExpression()
 
 int IExpression::get_child_count() const
 {
-	const ExpressionList& children = get_children();
-	return children.size();
+	return _children.size();
 }
 	
 std::shared_ptr<IExpression> IExpression::get_child(int ndx) const
 {
-	const ExpressionList& children = get_children();
-	if(ndx < 0 || ndx >= (int) children.size())
+	if(ndx < 0 || ndx >= (int) _children.size())
 	{
 		throw std::invalid_argument("ndx out of bounds");
 	}
 
-	return children[ndx];	
+	return _children[ndx];	
+}
+
+ExpressionList& IExpression::get_children()
+{
+	return _children;
+}
+
+void IExpression::add_child(std::shared_ptr<IExpression> child)
+{
+	_children.push_back(child);
 }
 
 ValueExpression::ValueExpression(std::shared_ptr<IValue> val)
@@ -42,11 +55,6 @@ std::shared_ptr<IValue> ValueExpression::eval() const
 {
 	//TRACE_VERBOSE("ValueExpression::eval()")
 	return _pVal;
-}
-
-const ExpressionList& ValueExpression::get_children() const
-{
-	return _children;
 }
 	
 Gpl_type ValueExpression::get_type() const
@@ -69,7 +77,7 @@ ArrayReferenceExpression::ArrayReferenceExpression
 	}
 
 	_type = pSymbol->get_type();
-	_children.push_back(ndx_expr);
+	add_child(ndx_expr);
 }
 
 ArrayReferenceExpression::~ArrayReferenceExpression()
@@ -80,7 +88,7 @@ ArrayReferenceExpression::~ArrayReferenceExpression()
 std::shared_ptr<IValue> ArrayReferenceExpression::eval() const
 {	
 	TRACE_VERBOSE("ArrayReferenceExpression::eval()")
-	const std::shared_ptr<IExpression>& ndx_expr = _children[0];
+	std::shared_ptr<IExpression> ndx_expr = get_child(0);
 	const std::shared_ptr<IValue>& ndx_val = ndx_expr->eval();
 
 	std::string reference = _arrayName + "[";
@@ -99,12 +107,6 @@ std::shared_ptr<IValue> ArrayReferenceExpression::eval() const
 	return ret;
 }
 
-const ExpressionList& ArrayReferenceExpression::get_children() const
-{
-	return _children;
-}
-
-
 std::string ArrayReferenceExpression::get_arrayName() const
 {
 	return _arrayName;
@@ -115,375 +117,323 @@ Gpl_type ArrayReferenceExpression::get_type() const
 	return _type;
 }
 
-OperationalExpression::OperationalExpression(std::shared_ptr<IExpression> pArg1, Operator_type op)
-	: IExpression()
+AddExpression::AddExpression(std::shared_ptr<IExpression> pArg1, std::shared_ptr<IExpression> pArg2)
+	: IOperationalExpression(PLUS)
 {
-	if(!pArg1)
-	{
-		throw std::invalid_argument("pArg1 is null");
-	}
-
-	Gpl_type arg_type = pArg1->get_type();
-
-	// Confirm this is a unary operator or a function that takes a single parameter like sin(expr)
-	// also confirm that the type of the sub-expression is OK
-	switch(op)
-	{
-		case UNARY_MINUS:
-			if(arg_type != INT && arg_type != DOUBLE)
-			{
-				throw invalid_operand_type(op, true);
-			}
-			_type = arg_type;
-			break;
-
-		case NOT:
-			if(arg_type != INT)
-			{
-				throw invalid_operand_type(op, true);
-			}
-			_type = INT;
-			break;
-
-		case SIN:
-		case COS:
-		case TAN:
-		case ASIN:
-		case ACOS:
-		case ATAN:
-		case SQRT:
-			if(arg_type != INT && arg_type != DOUBLE)
-			{
-				throw invalid_operand_type(op, true);
-			}
-			_type = DOUBLE;
-			break;
-
-		case FLOOR:
-		case ABS:
-			if(arg_type != INT && arg_type != DOUBLE)
-			{
-				throw invalid_operand_type(op, true);
-			}
-			_type = INT;
-			break;
-		
-		case RANDOM:
-			if(arg_type != INT && arg_type != DOUBLE)
-			{
-				throw invalid_operand_type(op, true);
-			}
-			_type = INT;
-			break;
-
-		default:
-			throw invalid_operand_type(op, true);
-	}
-
-	_children.push_back(pArg1);
-	_op = op;
-	_bUnary = true;
-}
-
-OperationalExpression::OperationalExpression (std::shared_ptr<IExpression> pArg1, 
-		Operator_type op, std::shared_ptr<IExpression> pArg2)
-	: IExpression()
-{
-	_bUnary = false;
 	if(!pArg1 || !pArg2)
 	{
-		throw std::invalid_argument("Argument is NULL");
+		throw std::invalid_argument("Argument cannot be NULL");
 	}
 
-	Gpl_type arg1_type = pArg1->get_type();
-	Gpl_type arg2_type = pArg2->get_type();
-
-	// Confirm that the selected Operation takes two arguments
-	// Confirm that the arguments are of the right type(s)
-	switch(op)
+	_type = pArg1->get_type();
+	if(_type != INT && _type != DOUBLE && _type != STRING)
 	{
-		case PLUS:
-			if(arg1_type == STRING && (arg2_type == INT || arg2_type == DOUBLE || arg2_type == STRING))
-			{
-				_type = STRING;
-			}
-			else if(arg2_type == STRING && (arg1_type == INT || arg1_type == DOUBLE || arg1_type == STRING))
-			{
-				_type = STRING;
-			}
-			else if(arg1_type == DOUBLE && (arg2_type == INT || arg2_type == DOUBLE))
-			{
-				_type = DOUBLE;
-			}
-			else if(arg2_type == DOUBLE && (arg1_type == INT || arg1_type == DOUBLE))
-			{
-				_type = DOUBLE;
-			}
-			else if(arg1_type == INT && (arg2_type == INT))
-			{
-				_type = INT;
-			}
-			else if(arg1_type == GAME_OBJECT ||
-					arg1_type == ANIMATION_BLOCK)
-			{
-				throw invalid_operand_type(op, true);
-			}
-			else if(arg2_type == GAME_OBJECT ||
-					arg2_type == ANIMATION_BLOCK)
-			{
-				throw invalid_operand_type(op, false);
-			}
-			else
-			{
-				throw std::logic_error("Invalid PLUS usage detected");
-			}
-			break;
-
-		case MINUS:
-		case MULTIPLY:
-		case DIVIDE:
-			if(arg1_type == DOUBLE && (arg2_type == INT || arg2_type == DOUBLE))
-			{
-				_type = DOUBLE;
-			}
-			else if(arg2_type == DOUBLE && (arg1_type == INT || arg1_type == DOUBLE))
-			{
-				_type = DOUBLE;
-			}
-			else if(arg1_type == INT && arg2_type == INT)
-			{
-				_type = INT;
-			}
-			else if(arg1_type != INT && arg1_type != DOUBLE)
-			{
-				throw invalid_operand_type(op, true);
-			}
-			else
-			{
-				throw invalid_operand_type(op, false);
-			}
-			break;
-
-		case MOD:
-			if(arg1_type != INT)
-			{
-				throw invalid_operand_type(op, true);
-			}
-			else if(arg2_type != INT)
-			{
-				throw invalid_operand_type(op, false);
-			}
-			_type = INT;
-			break;
-
-		case AND:
-		case OR:
-		case LESS_THAN:
-		case LESS_THAN_EQUAL:
-		case GREATER_THAN:
-		case GREATER_THAN_EQUAL:
-			if(arg1_type == GAME_OBJECT || arg1_type == ANIMATION_BLOCK)
-			{
-				throw invalid_operand_type(op, true);
-			}
-			else if(arg2_type == GAME_OBJECT || arg2_type == ANIMATION_BLOCK)
-			{
-				throw invalid_operand_type(op, false);
-			}
-			_type = INT;
-			break;
-
-		case EQUAL:
-		case NOT_EQUAL:
-			if(arg1_type == GAME_OBJECT || arg1_type == ANIMATION_BLOCK)
-			{
-				throw invalid_operand_type(op, true);
-			}
-			else if(arg2_type == GAME_OBJECT || arg2_type == ANIMATION_BLOCK)
-			{
-				throw invalid_operand_type(op, false);
-			}
-			_type = INT;
-			break;
-
-		case NEAR:
-		case TOUCHES:
-			if(arg1_type != GAME_OBJECT)
-			{
-				throw object_operand_expected();
-			}
-			else if(arg2_type != GAME_OBJECT)
-			{
-				throw object_operand_expected();
-			}
-			throw std::logic_error("NEAR/TOUCHES Operators are not yet implemented");
-			_type = INT;
-			break;
-
-		default:
-			// Any other operator requires 2 operands
-			throw invalid_operand_type(op, false);
+		throw invalid_operand_type(PLUS, true);
 	}
 
-	_op = op;
-	_children.push_back(pArg1);
-	_children.push_back(pArg2);
+	switch(pArg2->get_type())
+	{
+		case INT:
+			break;
+		case DOUBLE:
+			if(_type == INT) _type = DOUBLE;
+			break;
+		case STRING:
+			_type = STRING;
+			break;
+		default:
+			throw invalid_operand_type(PLUS, false);
+	}
+
+	add_child(pArg1);
+	add_child(pArg2);
 }
 
-OperationalExpression::~OperationalExpression()
+AddExpression::~AddExpression() 
 {}
 
-const ExpressionList& OperationalExpression::get_children() const
+std::shared_ptr<IValue> AddExpression::eval() const
 {
-	return _children;
+	std::shared_ptr<IValue> val1 = get_child(0)->eval();
+	std::shared_ptr<IValue> val2 = get_child(1)->eval();
+	std::shared_ptr<IValue> ret = nullptr;
+	
+	switch(_type)
+	{
+		case INT:
+		{
+			int result = val1->get_int() + val2->get_int();
+			ret.reset(new ConstantValue(result));
+			break;
+		}
+		case DOUBLE:
+		{
+			double result = val1->get_double() + val2->get_double();
+			ret.reset(new ConstantValue(result));
+			break;
+		}
+		case STRING:
+		{
+			std::string result = val1->get_string() + val2->get_string();
+			ret.reset(new ConstantValue(result));
+			break;
+		}
+		default:
+			throw std::logic_error("AddExpression::eval() - Invalid Type: " + gpl_type_to_string(_type));	
+	}
+
+	return ret;
 }
 
-Gpl_type OperationalExpression::get_type() const
+Gpl_type AddExpression::get_type() const
 {
 	return _type;
 }
 
-std::shared_ptr<IValue> OperationalExpression::eval() const
+MinusExpression::MinusExpression(std::shared_ptr<IExpression> pArg1, std::shared_ptr<IExpression> pArg2)
+	: IOperationalExpression(MINUS)
 {
-	TRACE_VERBOSE("OperationalExpression::eval() - Operator: '" << operator_to_string(_op)
-			<< "' Type: " << gpl_type_to_string(get_type()))
-
-	std::shared_ptr<IValue> pret = nullptr;
-
-	std::shared_ptr<IValue> pArg1, pArg2;
-	pArg1 = _children[0]->eval();
-	TRACE_VERBOSE("OperationalExpression::eval() - Arg1 Type: " << gpl_type_to_string(pArg1->get_type()))
-
-	if(!_bUnary)
+	if(!pArg1 || !pArg2)
 	{
-		pArg2 = _children[1]->eval();
-		TRACE_VERBOSE("OperationalExpression::eval() - Arg2 Type: " << gpl_type_to_string(pArg2->get_type()))
+		throw std::invalid_argument("Argument cannot be NULL");
 	}
 
-	std::shared_ptr<GPLVariant> pvar;
-	switch(_op)
+	_type = pArg1->get_type();
+	if(_type != INT && _type != DOUBLE)
 	{
-		case PLUS:
-			switch(_type)
-			{
-				case INT:
-				{
-					int temp = pArg1->get_int();
-					temp += pArg2->get_int();
-					pret.reset(new ConstantValue(temp));
-					break;
-				}
-				case DOUBLE:
-				{
-					double temp = pArg1->get_double();
-					temp += pArg2->get_double();
-					pret.reset(new ConstantValue(temp));
-					break;
-				}
-				case STRING:
-				{
-					std::string temp = pArg1->get_string();
-					temp += pArg2->get_string();
-					pret.reset(new ConstantValue(temp));
-					break;
-				}
-				default: 
-					break;
-			}
-			break;
-						
-		case MINUS:
-			switch(_type)
-			{
-				case INT:
-				{
-					int temp = pArg1->get_int();
-					temp -= pArg2->get_int();
-					pret.reset(new ConstantValue(temp));
-					break;
-				}
-				case DOUBLE:
-				{
-					double temp = pArg2->get_double();
-					temp -= pArg2->get_double();
-					pret.reset(new ConstantValue(temp));
-					break;
-				}				
-				default:
-					break;
-			}
+		throw invalid_operand_type(MINUS, true);
+	}
+
+	switch(pArg2->get_type())
+	{
+		case INT:
 			break;
 
-		case MULTIPLY:
-			switch(_type)
-			{
-				case INT:
-				{
-					int temp = pArg1->get_int();
-					temp *= pArg2->get_int();
-					pret.reset(new ConstantValue(temp));
-					TRACE_VERBOSE("MULTIPLY. pret->get_int(): " << pret->get_int())
-					break;
-				}
-				case DOUBLE:
-				{
-					double temp = pArg1->get_double();
-					temp *= pArg2->get_double();
-					pret.reset(new ConstantValue(temp));
-					TRACE_VERBOSE("MULTIPLY. temp: " << temp)
-					TRACE_VERBOSE("pret->get_double(): " << pret->get_double())
-					break;
-				}
-				default:
-					break;
-			}
-			break;
-
-		case DIVIDE:
-			switch(_type)
-			{
-				case INT:
-				{
-					int temp = pArg1->get_int();
-					temp /= pArg2->get_int();
-					pret.reset(new ConstantValue(temp));
-					break;
-				}
-				case DOUBLE:
-				{
-					double temp = pArg1->get_double();
-					temp /= pArg2->get_double();
-					pret.reset(new ConstantValue(temp));
-				}
-				default:
-					break;
-			}
-			break;	
-
-		case MOD:
-			switch(_type)
-			{
-				case INT:
-				{
-					int temp = pArg1->get_int();
-					temp %= pArg2->get_int();
-					pret.reset(new ConstantValue(temp));
-				}
-				default:
-					break;
-			}
+		case DOUBLE:
+			_type = DOUBLE;
 			break;
 
 		default:
-			throw std::logic_error("Operator not Implemented");
+			throw invalid_operand_type(MINUS, false);
 	}
 
-	if(!pret)
+	add_child(pArg1);
+	add_child(pArg2);
+}
+
+MinusExpression::~MinusExpression()
+{}
+
+std::shared_ptr<IValue> MinusExpression::eval() const
+{
+	std::shared_ptr<IValue> pval1 = get_child(0)->eval();
+	std::shared_ptr<IValue> pval2 = get_child(1)->eval();
+	std::shared_ptr<IValue> pret = nullptr;
+
+	if(_type == INT)
 	{
-		throw new std::logic_error("Operator not Implemented for the requested return type");
+		int result = pval1->get_int() + pval2->get_int();
+		pret.reset(new ConstantValue(result));
+	}
+	else // DOUBLE
+	{
+		double result = pval2->get_double() + pval2->get_double();
+		pret.reset(new ConstantValue(result));
 	}
 
 	return pret;
 }
 
+Gpl_type MinusExpression::get_type() const
+{
+	return _type;
+}
+
+
+MultiplyExpression::MultiplyExpression(std::shared_ptr<IExpression> pArg1, std::shared_ptr<IExpression> pArg2)
+	: IOperationalExpression(MULTIPLY)
+{
+	if(!pArg1 || !pArg2) throw std::invalid_argument("Argument cannot be NULL");
+
+	_type = pArg1->get_type();
+	if(_type != INT && _type != DOUBLE)
+	{
+		throw invalid_operand_type(MULTIPLY, true);
+	}
+
+	switch(pArg2->get_type())
+	{
+		case INT:
+			break;
+		case DOUBLE:
+			_type = DOUBLE;
+			break;
+		default:
+			throw invalid_operand_type(MULTIPLY, false);
+	}
+	
+	add_child(pArg1);
+	add_child(pArg2);
+}
+
+MultiplyExpression::~MultiplyExpression()
+{}
+
+std::shared_ptr<IValue> MultiplyExpression::eval() const
+{
+	std::shared_ptr<IValue> pval1 = get_child(0)->eval();
+	std::shared_ptr<IValue> pval2 = get_child(1)->eval();
+	std::shared_ptr<IValue> pret = nullptr;
+
+	if(_type == INT)
+	{
+		int result = pval1->get_int() + pval2->get_int();
+		pret.reset(new ConstantValue(result));
+	}
+	else
+	{
+		double result = pval1->get_double() + pval2->get_double();
+		pret.reset(new ConstantValue(result));
+	}
+
+	return pret;
+}
+
+Gpl_type MultiplyExpression::get_type() const
+{
+	return _type;
+}
+	
+	
+DivideExpression::DivideExpression(std::shared_ptr<IExpression> pArg1, std::shared_ptr<IExpression> pArg2)
+	: IOperationalExpression(DIVIDE)
+{
+	if(!pArg1 || !pArg2) throw std::invalid_argument("Argument cannot be NULL");
+
+	_type = pArg1->get_type();
+	if(_type != INT && _type != DOUBLE)
+	{
+		throw invalid_operand_type(DIVIDE, true);
+	}
+
+	switch(pArg2->get_type())
+	{
+		case INT:
+			break;
+		case DOUBLE:
+			_type = DOUBLE;
+		default:
+			throw invalid_operand_type(DIVIDE, false);
+	}
+
+	add_child(pArg1);
+	add_child(pArg2);
+}
+
+DivideExpression::~DivideExpression()
+{}
+
+std::shared_ptr<IValue> DivideExpression::eval() const
+{
+	std::shared_ptr<IValue> pval1 = get_child(0)->eval();
+	std::shared_ptr<IValue> pval2 = get_child(1)->eval();
+	std::shared_ptr<IValue> pret = nullptr;
+
+	if(pval2->get_double() == 0)
+	{
+		// On Divide By Zero - just return zero
+		Error::error(Error::DIVIDE_BY_ZERO_AT_PARSE_TIME);
+		if(_type == INT) pret.reset(new ConstantValue(0));
+		else pret.reset(new ConstantValue(0.0));	
+	}
+	else if(_type == INT)
+	{
+		int result = pval1->get_int() / pval2->get_int();
+		pret.reset(new ConstantValue(result));
+	}
+	else
+	{
+		double result = pval1->get_double() / pval2->get_double();
+		pret.reset(new ConstantValue(result));
+	}	
+
+	return pret;
+}
+
+Gpl_type DivideExpression::get_type() const
+{
+	return _type;
+}
+
+ModExpression::ModExpression(std::shared_ptr<IExpression> pArg1, std::shared_ptr<IExpression> pArg2)
+	:  IOperationalExpression(MOD)
+{
+	if(!pArg1 || !pArg2) 
+		throw std::invalid_argument("Argument cannot be NULL");
+
+	if(pArg1->get_type() != INT) 
+		throw invalid_operand_type(MOD, true);
+
+	if(pArg2->get_type() != INT)
+		throw invalid_operand_type(MOD, false);
+
+	_type = INT;
+	add_child(pArg1);
+	add_child(pArg2);
+}
+
+ModExpression::~ModExpression()
+{}
+
+std::shared_ptr<IValue> ModExpression::eval() const
+{
+	std::shared_ptr<IValue> pval1 = get_child(0)->eval();
+	std::shared_ptr<IValue> pval2 = get_child(1)->eval();
+	std::shared_ptr<IValue> pret = nullptr;
+	
+	if(pval2->get_int() == 0)
+	{
+		Error::error(Error::MOD_BY_ZERO_AT_PARSE_TIME);
+		pret.reset(new ConstantValue(0));
+	}
+	else
+	{
+		pret.reset(new ConstantValue(pval1->get_int() % pval2->get_int()));
+	}
+
+	return pret;
+}
+
+Gpl_type ModExpression::get_type() const
+{
+	return _type;
+}
+
+
+SinExpression::SinExpression(std::shared_ptr<IExpression> pArg1)
+	: IOperationalExpression(SIN)
+{
+	if(!pArg1) throw std::invalid_argument("Argument cannot be NULL");
+
+	Gpl_type type = pArg1->get_type();
+	if(type != INT && type != DOUBLE)
+		throw invalid_operand_type(SIN, true);
+
+	add_child(pArg1);
+}
+
+SinExpression::~SinExpression()
+{}
+
+std::shared_ptr<IValue> SinExpression::eval() const
+{
+	std::shared_ptr<IValue> pval1 = get_child(0)->eval();
+	std::shared_ptr<IValue> pret = nullptr;
+
+	double rads = CONVERT_TO_RADIANS(pval1->get_double());
+	double result = sin(rads);
+	pret.reset(new ConstantValue(result));
+
+	return pret;
+}
 

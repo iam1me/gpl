@@ -26,6 +26,30 @@ private:
 	std::string _args[3];		
 };
 
+class undefined_error : public gpl_exception
+{
+public:
+	undefined_error() 
+		: gpl_exception(Error::UNDEFINED_ERROR) {};
+	virtual ~undefined_error() {};
+};
+
+class divide_by_zero : public gpl_exception
+{
+public:
+	divide_by_zero()
+		: gpl_exception(Error::DIVIDE_BY_ZERO_AT_PARSE_TIME) {};
+	virtual ~divide_by_zero() {};
+};
+
+class mod_by_zero : public gpl_exception
+{
+public:
+	mod_by_zero()
+		: gpl_exception(Error::MOD_BY_ZERO_AT_PARSE_TIME) {};
+	virtual ~mod_by_zero() {};
+};
+
 class undeclared_variable : public gpl_exception
 {
 public:

@@ -22,21 +22,21 @@ class IValue;
 class Symbol
 {
 public:
-	// The value can be nullptr. If so, the variable is declared but not initialized
-	Symbol(const std::string& name, Gpl_type type, std::shared_ptr<IValue> val);
+	Symbol(const std::string& name, Gpl_type type); // Declares a symbol, but doesn't initialize it
+	Symbol(const std::string& name, std::shared_ptr<IValue> val); // Declares & initializes. val can't be null
 
-	template<class T>
-	Symbol(const std::string& name, const T& val);
+	//template<class T>
+	//Symbol(const std::string& name, const T& val);
 	~Symbol();
 
 	const std::string& get_name() const;
 	Gpl_type get_type() const;
 	
-	template<class T>
-	const T& get_value() const;
+	//template<class T>
+	//const T& get_value() const;
 
-	std::shared_ptr<IValue> get_value();	
-	void set_value(std::shared_ptr<IValue> pval);
+	const std::shared_ptr<IValue>& get_value();	
+	void set_value(const std::shared_ptr<IValue>& pval);
 
 	//std::shared_ptr<GPLVariant> get_variant();
 
@@ -44,11 +44,11 @@ public:
 
 private:
 	std::string _name;
-	Gpl_type _type;
 	std::shared_ptr<IValue> _pval;
+	bool _bInitialized;
 };
 
-template<class T>
+/*template<class T>
 Symbol::Symbol(const std::string& name, const T& val)
 {
 	_name = name;
@@ -59,7 +59,7 @@ template<class T>
 const T& Symbol::get_value() const
 {
 	return _pvar->get_value<T>();
-}
+}*/
 
 
 #endif

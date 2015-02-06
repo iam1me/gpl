@@ -17,7 +17,7 @@
 #ifndef PARSER_H
 #define PARSER_H
 
-#define _DEBUG
+//#define _DEBUG
 
 // for each type used in the union, you will need to 
 // put the appropriate include here

@@ -40,23 +40,23 @@ extern int line_count;            // current line in the input; from record.l
 %{
 Error error_handler;
 
-std::shared_ptr<Symbol> InsertSymbol (Gpl_type type, std::string name, 
+std::shared_ptr<Symbol> InsertSymbol (std::string name, Gpl_type type,
 			std::shared_ptr<IValue> pval)
 {
 	std::shared_ptr<Symbol> pSymbol;
 	switch(type)
 	{
 		case INT:
-			pSymbol.reset(new Symbol(name, pval->get_int()));
+			pSymbol.reset(new Symbol(name, pval));
 			break;
 		
 		case DOUBLE:
-			pSymbol.reset(new Symbol(name, pval->get_double()));
+			pSymbol.reset(new Symbol(name, pval));
 			break;
 		
 		case STRING:
 		{
-			pSymbol.reset(new Symbol(name, pval->get_string()));
+			pSymbol.reset(new Symbol(name, pval));
 			break;
 		}
 		default:
@@ -66,6 +66,19 @@ std::shared_ptr<Symbol> InsertSymbol (Gpl_type type, std::string name,
 			break;
 	}
 	
+	bool result = Symbol_table::instance()->insert_symbol(pSymbol);
+	if(!result)
+	{
+		throw previously_declared_variable(name);
+	}
+
+	return pSymbol;
+}
+
+// Declares a variable. Default value left up to the Symbol class
+std::shared_ptr<Symbol> InsertSymbol(std::string name, Gpl_type type)
+{
+	std::shared_ptr<Symbol> pSymbol(new Symbol(name, type));
 	bool result = Symbol_table::instance()->insert_symbol(pSymbol);
 	if(!result)
 	{
@@ -361,12 +374,12 @@ variable_declaration:
 				std::shared_ptr<IValue> init_val = init_expr->eval();
 			
 				TRACE_VERBOSE("Registering Symbol: " << var_name << "(has initial value)")
-				InsertSymbol($1, var_name, init_val);
+				InsertSymbol(var_name, $1, init_val);
 			}
 			else
 			{
 				TRACE_VERBOSE("Registering Symbol: " << var_name << "(no initial value)")
-				InsertSymbol($1, var_name, nullptr);
+				InsertSymbol(var_name, $1);
 			}
 		}
 
@@ -408,7 +421,7 @@ variable_declaration:
 				name += std::to_string(i) + "]";
 
 				std::shared_ptr<IValue> init_val(new ConstantValue(42));
-				InsertSymbol($1, name, init_val);
+				InsertSymbol(name, $1, init_val);
 			}
 		}
 		GPL_BLOCK_END()
@@ -752,7 +765,7 @@ expression:
 		GPL_BLOCK_BEGIN("expression[0]")
 		std::shared_ptr<IExpression> pLHS($1);
 		std::shared_ptr<IExpression> pRHS($3);
-		$$ = (IExpression*) new OperationalExpression(pLHS, OR, pRHS);
+		$$ = new OrExpression(pLHS, pRHS);
 		GPL_BLOCK_END()
 	}
     | expression T_AND expression %prec LOGIC_COMPARE_OPS
@@ -760,7 +773,7 @@ expression:
 		GPL_BLOCK_BEGIN("expression[1]")
 		std::shared_ptr<IExpression> pLHS($1);
 		std::shared_ptr<IExpression> pRHS($3);
-		$$ = (IExpression*) new OperationalExpression(pLHS, AND, pRHS);
+		$$ = new AndExpression(pLHS, pRHS);
 		GPL_BLOCK_END()
 	}
     | expression T_LESS_EQUAL expression %prec MATH_COMPARE_OPS
@@ -768,7 +781,7 @@ expression:
 		GPL_BLOCK_BEGIN("expression[2]")
 		std::shared_ptr<IExpression> pLHS($1);
 		std::shared_ptr<IExpression> pRHS($3);
-		$$ = (IExpression*) new OperationalExpression(pLHS, LESS_THAN_EQUAL, pRHS);
+		$$ = new LessEqualExpression(pLHS, pRHS);
 		GPL_BLOCK_END()
 	}
     | expression T_GREATER_EQUAL  expression %prec MATH_COMPARE_OPS
@@ -776,7 +789,7 @@ expression:
 		GPL_BLOCK_BEGIN("expression[3]")
 		std::shared_ptr<IExpression> pLHS($1);
 		std::shared_ptr<IExpression> pRHS($3);
-		$$ = (IExpression*) new OperationalExpression(pLHS, GREATER_THAN_EQUAL, pRHS);
+		$$ = new GreaterEqualExpression(pLHS, pRHS);
 		GPL_BLOCK_END()
 	}
     | expression T_LESS expression  %prec MATH_COMPARE_OPS
@@ -784,7 +797,7 @@ expression:
 		GPL_BLOCK_BEGIN("expression[4]")
 		std::shared_ptr<IExpression> pLHS($1);
 		std::shared_ptr<IExpression> pRHS($3);
-		$$ = (IExpression*) new OperationalExpression(pLHS, LESS_THAN, pRHS);
+		$$ = new LessExpression(pLHS, pRHS);
 		GPL_BLOCK_END()
 	}
     | expression T_GREATER  expression %prec MATH_COMPARE_OPS
@@ -792,7 +805,7 @@ expression:
 		GPL_BLOCK_BEGIN("expression[5]")
 		std::shared_ptr<IExpression> pLHS($1);
 		std::shared_ptr<IExpression> pRHS($3);
-		$$ = (IExpression*) new OperationalExpression(pLHS, GREATER_THAN, pRHS);
+		$$ = new GreaterExpression(pLHS, pRHS);
 		GPL_BLOCK_END()
 	}
     | expression T_EQUAL expression %prec MATH_COMPARE_OPS
@@ -800,7 +813,7 @@ expression:
 		GPL_BLOCK_BEGIN("expression[6]")
 		std::shared_ptr<IExpression> pLHS($1);
 		std::shared_ptr<IExpression> pRHS($3);
-		$$ = (IExpression*) new OperationalExpression(pLHS, EQUAL, pRHS);
+		$$ = new EqualExpression(pLHS, pRHS);
 		GPL_BLOCK_END()
 	}
     | expression T_NOT_EQUAL expression %prec MATH_COMPARE_OPS
@@ -808,7 +821,7 @@ expression:
 		GPL_BLOCK_BEGIN("expression[7]")
 		std::shared_ptr<IExpression> pLHS($1);
 		std::shared_ptr<IExpression> pRHS($3);
-		$$ = (IExpression*) new OperationalExpression(pLHS, NOT_EQUAL, pRHS);
+		$$ = new NotEqualExpression(pLHS, pRHS);
 		GPL_BLOCK_END()
 	}
     | expression T_PLUS expression  %prec MATH_SIMPLE_OPS
@@ -816,7 +829,7 @@ expression:
 		GPL_BLOCK_BEGIN("expression[8]")
 		std::shared_ptr<IExpression> pLHS($1);
 		std::shared_ptr<IExpression> pRHS($3);
-		$$ = (IExpression*) new OperationalExpression(pLHS, PLUS, pRHS);
+		$$ = new AddExpression(pLHS, pRHS);
 		GPL_BLOCK_END()
 	}
     | expression T_MINUS expression %prec MATH_SIMPLE_OPS
@@ -824,7 +837,7 @@ expression:
 		GPL_BLOCK_BEGIN("expression[9]")
 		std::shared_ptr<IExpression> pLHS($1);
 		std::shared_ptr<IExpression> pRHS($3);
-		$$ = new OperationalExpression(pLHS, MINUS, pRHS);
+		$$ = new MinusExpression(pLHS, pRHS);
 		GPL_BLOCK_END()
 	}
     | expression T_ASTERISK expression %prec MATH_COMPLEX_OPS
@@ -832,7 +845,7 @@ expression:
 		GPL_BLOCK_BEGIN("expression[10]")
 		std::shared_ptr<IExpression> pLHS($1);
 		std::shared_ptr<IExpression> pRHS($3);
-		$$ = new OperationalExpression(pLHS, MULTIPLY, pRHS);
+		$$ = new MultiplyExpression(pLHS, pRHS);
 		GPL_BLOCK_END()
 	}
     | expression T_DIVIDE expression %prec MATH_COMPLEX_OPS
@@ -840,7 +853,7 @@ expression:
 		GPL_BLOCK_BEGIN("expression[11]")
 		std::shared_ptr<IExpression> pLHS($1);
 		std::shared_ptr<IExpression> pRHS($3);
-		$$ = new OperationalExpression(pLHS, DIVIDE, pRHS);
+		$$ = new DivideExpression(pLHS, pRHS);
 		GPL_BLOCK_END()
 	}
     | expression T_MOD expression %prec MATH_COMPLEX_OPS
@@ -848,28 +861,37 @@ expression:
 		GPL_BLOCK_BEGIN("expression[11]")
 		std::shared_ptr<IExpression> pLHS($1);
 		std::shared_ptr<IExpression> pRHS($3);
-		$$ = (IExpression*) new OperationalExpression(pLHS, MOD, pRHS);
+		$$ = new ModExpression(pLHS, pRHS);
 		GPL_BLOCK_END()
 	}
     | T_MINUS  expression %prec UNARY_OPS
 	{
 		GPL_BLOCK_BEGIN("expression[12]")
-		std::shared_ptr<IExpression> pOperand($2);
-		$$ = (IExpression*) new OperationalExpression(pOperand, UNARY_MINUS);
+		std::shared_ptr<IExpression> pLHS(new ConstantExpression(-1));
+		std::shared_ptr<IExpression> pRHS($2);
+		$$ = new MultiplyExpression(pLHS, pRHS);
 		GPL_BLOCK_END()
 	}
     | T_NOT  expression %prec UNARY_OPS
 	{
 		GPL_BLOCK_BEGIN("expression[13]")
 		std::shared_ptr<IExpression> pOperand($2);
-		$$ = (IExpression*) new OperationalExpression(pOperand, NOT);
+		$$ = new NotExpression(pOperand);
 		GPL_BLOCK_END()
 	}
     | math_operator T_LPAREN expression T_RPAREN %prec SUB_EXPR_OPS
 	{
 		GPL_BLOCK_BEGIN("expression[14]")
 		std::shared_ptr<IExpression> pOperand($3);
-		$$ = (IExpression*) new OperationalExpression(pOperand, $1);
+		switch(math_operator)
+		{
+			case SIN:
+				$$ = new SinExpression(pOperand);
+				break;
+
+			default:
+				throw std::runtime_error("That math_operator isn't implemented yet");
+		}
 		GPL_BLOCK_END()
 	}
     | variable geometric_operator variable %prec OBJECT_COMPARE_OPS
@@ -877,7 +899,8 @@ expression:
 		GPL_BLOCK_BEGIN("expression[15]")
 		std::shared_ptr<IExpression> pLHS($1);
 		std::shared_ptr<IExpression> pRHS($3);
-		$$ = (IExpression*) new OperationalExpression(pLHS, $2, pRHS);
+		
+		throw std::runtime_error("That geometric_operator isn't implemented yet");
 		GPL_BLOCK_END()
 	}
     ;

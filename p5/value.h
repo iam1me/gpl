@@ -100,6 +100,11 @@ public:
 	Gpl_type get_type() const;
 	bool is_reference() const;
 	bool is_constant() const;
+	
+	int get_int() const;
+	double get_double() const;
+	std::string get_string() const;
+
 	std::shared_ptr<Symbol> get_reference() const;
 
 protected:
@@ -124,7 +129,7 @@ protected:
 	std::shared_ptr<GPLVariant> get_variant() const;
 
 private:
-	std::shared_Ptr<GPLVariant> _pvar;
+	std::shared_ptr<GPLVariant> _pvar;
 };
 
 #endif
