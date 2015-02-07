@@ -1,4 +1,4 @@
-#include <math.h>
+#include <cmath>
 #include <random>
 #include <chrono>
 #include "expression.h"
@@ -629,6 +629,7 @@ AbsoluteExpression::AbsoluteExpression(std::shared_ptr<IExpression> pArg)
 	if(!(_type & (INT | DOUBLE)))
 		throw invalid_operand_type(ABS, true);
 
+	TRACE_VERBOSE("AbsoluteExpression::AbsoluteExpression - Type: " << gpl_type_to_string(_type))
 	add_child(pArg);
 }
 
@@ -642,12 +643,18 @@ std::shared_ptr<IValue> AbsoluteExpression::eval() const
 
 	if(_type == INT)
 	{
-		int result = abs(pval->get_double());
+		int result= pval->get_int();
+		result = std::abs(result);
+
+		TRACE_VERBOSE("ABS(" << pval->get_int() << ") = " << result);
 		pret.reset(new ConstantValue(result));
 	}
 	else // DOUBLE
 	{
-		double result = abs(pval->get_double());
+		double result = pval->get_double();
+		result = std::abs(result);
+
+		TRACE_VERBOSE("ABS(" << pval->get_double() << ") = " << result);
 		pret.reset(new ConstantValue(result));
 	}
 	return pret;
@@ -1008,7 +1015,7 @@ NotExpression::NotExpression(std::shared_ptr<IExpression> pArg)
 	if(!pArg) throw std::invalid_argument("Argument cannot be NULL");
 
 	if(!(pArg->get_type() & (INT | DOUBLE)))
-		throw invalid_operand_type(NOT, true);
+		throw invalid_operand_type(NOT, false);
 
 	add_child(pArg);
 }

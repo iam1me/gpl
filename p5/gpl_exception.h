@@ -5,13 +5,13 @@
 #include "gpl_type.h"
 #include "error.h"
 
-enum ErrorSeverity
+/*enum ErrorSeverity
 {
 	FATAL,
 	DO_NOT_RUN, // continue parsing
 	CONTINUE, // report and move on
 	IGNORE // copmletely silence the error and ignore
-};
+};*/
 
 class gpl_exception : public std::exception
 {
@@ -21,8 +21,12 @@ public:
 	Error::Error_type get_error() const;
 	std::string get_argument(int i) const;
 	int get_line() const;
-	virtual ErrorSeverity get_severity() const
-		{ return DO_NOT_RUN; };
+
+	/*virtual ErrorSeverity get_severity() const
+		{ return DO_NOT_RUN; };*/
+
+	void write_exception() const
+		{ Error::error(_err, _args[0], _args[1], _args[2]); };
 
 protected:
 	gpl_exception(Error::Error_type err_type, 
@@ -52,7 +56,7 @@ public:
 	divide_by_zero()
 		: gpl_exception(Error::DIVIDE_BY_ZERO_AT_PARSE_TIME) {};
 	virtual ~divide_by_zero() {};
-	ErrorSeverity get_severity() const { return CONTINUE; };
+	//ErrorSeverity get_severity() const { return CONTINUE; };
 };
 
 class mod_by_zero : public gpl_exception
@@ -69,7 +73,7 @@ public:
 	undeclared_variable(std::string var_name);
 	virtual ~undeclared_variable();
 	std::string get_variable_name() const;
-	ErrorSeverity get_severity() const { return FATAL; };
+	//ErrorSeverity get_severity() const { return FATAL; };
 protected:
 	std::string _varName;
 };
@@ -80,7 +84,7 @@ public:
 	bad_initial_value(std::string var_name)
 		: gpl_exception(Error::INVALID_TYPE_FOR_INITIAL_VALUE, var_name) {};
 	virtual ~bad_initial_value() {};
-	ErrorSeverity get_severity() const { return CONTINUE; };
+	//ErrorSeverity get_severity() const { return CONTINUE; };
 };
 
 class previously_declared_variable : public gpl_exception
@@ -121,7 +125,7 @@ class invalid_array_size : public gpl_exception
 public:
 	invalid_array_size(std::string array_name, std::string invalid_size);
 	virtual ~invalid_array_size() {};
-	ErrorSeverity get_severity() const { return FATAL; };
+	//ErrorSeverity get_severity() const { return FATAL; };
 };
 
 class invalid_index_type : public gpl_exception

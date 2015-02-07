@@ -121,16 +121,7 @@ inline std::shared_ptr<Symbol> get_symbol(std::string name, bool* bIsArray)
 #define GPL_BLOCK_END()\
 	} catch(const gpl_exception& ex) { \
 		error_handler.error(ex.get_error(), ex.get_argument(0), ex.get_argument(1), ex.get_argument(2)); \
-		switch(ex.get_severity())\
-		{	case FATAL:\
-				YYABORT;\
-				break;\
-			case DO_NOT_RUN:\
-				break;\
-			case CONTINUE:\
-			case IGNORE:\
-				break;\
-		}\
+		YYABORT;\
 	} catch (const std::exception& ex) { \
 		TRACE_ERROR("std::exception in '" << __gpl_block_name << "': "  << ex.what()) \
 		error_handler.error(Error::UNDEFINED_ERROR, ex.what()); \
@@ -389,29 +380,43 @@ variable_declaration:
 				std::shared_ptr<IValue> init_val = init_expr->eval();
 
 				Gpl_type init_type = init_val->get_type();
+				bool bBadInitialValue = false;
 				switch($1)
 				{
 					case INT:
 						if(init_type != INT)
-							throw bad_initial_value(var_name);
+						{
+							bad_initial_value(var_name).write_exception();
+							bBadInitialValue = true;
+							init_val.reset(new ConstantValue(0));
+						}
 						break;
 
 					case DOUBLE:
 						if(!(init_type & (INT|DOUBLE)))
-							throw bad_initial_value(var_name);
+						{
+							bad_initial_value(var_name).write_exception();
+							bBadInitialValue = true;
+							init_val.reset(new ConstantValue(0.0));
+						}
 						break;
 
 					case STRING:
 						if(!(init_type & (INT|DOUBLE|STRING)))
-							throw bad_initial_value(var_name);
+						{
+							bad_initial_value(var_name).write_exception();
+							bBadInitialValue = true;
+							init_val.reset(new ConstantValue(""));
+						}
 						break;
 
-					case GAME_OBJECT:
+					/*case GAME_OBJECT:
 						if(init_type != GAME_OBJECT)
-							throw bad_initial_value(var_name);
+							bad_initial_value(var_name).write_exception();
+							bBadInitialValue = true;
 						break;
 
-					/*case ANIMATION_BLOCK:
+					case ANIMATION_BLOCK:
 						if(init_type != ANIMATION_BlOCK)
 							throw bad_initial_value(var_name);
 						break;*/
@@ -419,7 +424,7 @@ variable_declaration:
 					default:
 						throw std::logic_error("Unhandled type: " + gpl_type_to_string(init_type));
 				}
-			
+
 				TRACE_VERBOSE("Registering Symbol: " << var_name << "(has initial value)")
 				InsertSymbol(var_name, $1, init_val);
 			}
