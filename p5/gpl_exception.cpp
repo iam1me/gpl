@@ -67,6 +67,15 @@ invalid_operand_type::invalid_operand_type(Operator_type op_type, bool bLHS)
 {
 	_operator = op_type;
 	_bLHS = bLHS;
+
+	switch(_operator)
+	{
+		case MOD:
+			set_argument(0, "mod");
+			break;
+		default:
+			break;
+	}
 }
 
 invalid_operand_type::~invalid_operand_type() 

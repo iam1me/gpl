@@ -430,7 +430,7 @@ SinExpression::SinExpression(std::shared_ptr<IExpression> pArg1)
 
 	Gpl_type type = pArg1->get_type();
 	if(type != INT && type != DOUBLE)
-		throw invalid_operand_type(SIN, true);
+		throw invalid_operand_type(SIN, false);
 
 	add_child(pArg1);
 }
@@ -457,7 +457,7 @@ CosExpression::CosExpression(std::shared_ptr<IExpression> pArg)
 
 	Gpl_type type = pArg->get_type();
 	if(type != INT && type != DOUBLE)
-		throw invalid_operand_type(COS, true);
+		throw invalid_operand_type(COS, false);
 
 	add_child(pArg);
 }
@@ -484,7 +484,7 @@ TanExpression::TanExpression(std::shared_ptr<IExpression> pArg)
 
 	Gpl_type type = pArg->get_type();
 	if(!(type & (INT | DOUBLE)))
-		throw invalid_operand_type(TAN, true);
+		throw invalid_operand_type(TAN, false);
 
 	add_child(pArg);
 }
@@ -507,7 +507,7 @@ AsinExpression::AsinExpression(std::shared_ptr<IExpression> pArg)
 
 	Gpl_type type = pArg->get_type();
 	if(!(type & (INT | DOUBLE)))
-		throw invalid_operand_type(ASIN, true);
+		throw invalid_operand_type(ASIN, false);
 
 	add_child(pArg);
 }
@@ -531,7 +531,7 @@ AcosExpression::AcosExpression(std::shared_ptr<IExpression> pArg)
 
 	Gpl_type type = pArg->get_type();
 	if(!(type & (INT | DOUBLE)))
-		throw invalid_operand_type(ACOS, true);
+		throw invalid_operand_type(ACOS, false);
 
 	add_child(pArg);
 }
@@ -555,7 +555,7 @@ AtanExpression::AtanExpression(std::shared_ptr<IExpression> pArg)
 
 	Gpl_type type = pArg->get_type();
 	if(!(type & (INT | DOUBLE)))
-		throw invalid_operand_type(ATAN, true);
+		throw invalid_operand_type(ATAN, false);
 
 	add_child(pArg);
 }
@@ -579,7 +579,7 @@ SqrtExpression::SqrtExpression(std::shared_ptr<IExpression> pArg)
 
 	Gpl_type type = pArg->get_type();
 	if(!(type & (INT | DOUBLE)))
-		throw invalid_operand_type(SQRT, true);
+		throw invalid_operand_type(SQRT, false);
 
 	add_child(pArg);
 }
@@ -604,7 +604,7 @@ FloorExpression::FloorExpression(std::shared_ptr<IExpression> pArg)
 
 	Gpl_type type = pArg->get_type();
 	if(!(type & (INT | DOUBLE)))
-		throw invalid_operand_type(FLOOR, true);
+		throw invalid_operand_type(FLOOR, false);
 
 	add_child(pArg);
 }
@@ -627,7 +627,7 @@ AbsoluteExpression::AbsoluteExpression(std::shared_ptr<IExpression> pArg)
 
 	_type = pArg->get_type();
 	if(!(_type & (INT | DOUBLE)))
-		throw invalid_operand_type(ABS, true);
+		throw invalid_operand_type(ABS, false);
 
 	TRACE_VERBOSE("AbsoluteExpression::AbsoluteExpression - Type: " << gpl_type_to_string(_type))
 	add_child(pArg);
@@ -668,7 +668,7 @@ RandomExpression::RandomExpression(std::shared_ptr<IExpression> pArg)
 
 	Gpl_type type = pArg->get_type();
 	if(!(type & (INT | DOUBLE)))
-		throw invalid_operand_type(RANDOM, true);
+		throw invalid_operand_type(RANDOM, false);
 
 	add_child(pArg);
 }

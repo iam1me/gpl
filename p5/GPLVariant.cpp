@@ -55,15 +55,15 @@ void GPLVariant::set_type(const Gpl_type& type)
 	switch(_type)
 	{
 		case INT:
-			_val_int = 42;
+			_val_int = 0;
 			break;
 
 		case DOUBLE:
-			_val_double = 3.14159;
+			_val_double = 0;
 			break;
 		
 		case STRING:
-			_val_pstr = new std::string("Hello World");
+			_val_pstr = new std::string("");
 			break;
 		
 		default:

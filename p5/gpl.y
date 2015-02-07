@@ -245,21 +245,21 @@ inline std::shared_ptr<Symbol> get_symbol(std::string name, bool* bIsArray)
 	Precedence Level 4. Group to the left.
 	Example: "a > b <= c" ==> "(a > b) <= c"
 ********************************************************/
-%precedence MATH_COMPARE_OPS
 %token T_LESS                "<"
 %token T_GREATER             ">"
 %token T_LESS_EQUAL          "<="
 %token T_GREATER_EQUAL       ">="
+%left T_LESS T_GREATER T_LESS_EQUAL T_GREATER_EQUAL
+
 %token T_EQUAL               "=="
 %token T_NOT_EQUAL           "!="
-%left T_LESS T_GREATER T_LESS_EQUAL T_GREATER_EQUAL T_EQUAL T_NOT_EQUAL
+%left  T_EQUAL T_NOT_EQUAL
 
 /********************************************************
 	Simple Mathematical Operators
 	Precedence Level 5. Group to the left.
 	Example "a + b - c" ==> "(a + b) - c"
 ********************************************************/
-%left MATH_SIMPLE_OPS
 %token T_PLUS  "+"
 %token T_MINUS "-"
 %left T_PLUS T_MINUS
@@ -269,10 +269,9 @@ inline std::shared_ptr<Symbol> get_symbol(std::string name, bool* bIsArray)
 	Precedence Level 6. Group to the left.
 	Example: "a * b / c" ==> "(a * b) / c"
 ********************************************************/
-%precedence MATH_COMPLEX_OPS
 %token T_ASTERISK            "*"
 %token T_DIVIDE              "/"
-%token T_MOD                 "%"
+%token T_MOD                 "mod"
 %left T_ASTERISK T_DIVIDE T_MOD
 
 
@@ -483,7 +482,7 @@ variable_declaration:
 				std::string name = var_name + "[";
 				name += std::to_string(i) + "]";
 
-				std::shared_ptr<IValue> init_val(new ConstantValue(42));
+				std::shared_ptr<IValue> init_val(new ConstantValue(0));
 				InsertSymbol(name, $1, init_val);
 			}
 		}
@@ -843,7 +842,7 @@ expression:
 		$$ = new AndExpression(pLHS, pRHS);
 		GPL_BLOCK_END()
 	}
-    | expression T_LESS_EQUAL expression %prec MATH_COMPARE_OPS
+    | expression T_LESS_EQUAL expression 
 	{
 		GPL_BLOCK_BEGIN("expression[2]")
 		std::shared_ptr<IExpression> pLHS($1);
@@ -851,7 +850,7 @@ expression:
 		$$ = new LessThanEqualExpression(pLHS, pRHS);
 		GPL_BLOCK_END()
 	}
-    | expression T_GREATER_EQUAL  expression %prec MATH_COMPARE_OPS
+    | expression T_GREATER_EQUAL  expression 
 	{
 		GPL_BLOCK_BEGIN("expression[3]")
 		std::shared_ptr<IExpression> pLHS($1);
@@ -859,7 +858,7 @@ expression:
 		$$ = new GreaterThanEqualExpression(pLHS, pRHS);
 		GPL_BLOCK_END()
 	}
-    | expression T_LESS expression  %prec MATH_COMPARE_OPS
+    | expression T_LESS expression 
 	{
 		GPL_BLOCK_BEGIN("expression[4]")
 		std::shared_ptr<IExpression> pLHS($1);
@@ -867,7 +866,7 @@ expression:
 		$$ = new LessThanExpression(pLHS, pRHS);
 		GPL_BLOCK_END()
 	}
-    | expression T_GREATER  expression %prec MATH_COMPARE_OPS
+    | expression T_GREATER  expression 
 	{
 		GPL_BLOCK_BEGIN("expression[5]")
 		std::shared_ptr<IExpression> pLHS($1);
@@ -875,7 +874,7 @@ expression:
 		$$ = new GreaterThanExpression(pLHS, pRHS);
 		GPL_BLOCK_END()
 	}
-    | expression T_EQUAL expression %prec MATH_COMPARE_OPS
+    | expression T_EQUAL expression 
 	{
 		GPL_BLOCK_BEGIN("expression[6]")
 		std::shared_ptr<IExpression> pLHS($1);
@@ -883,7 +882,7 @@ expression:
 		$$ = new EqualExpression(pLHS, pRHS);
 		GPL_BLOCK_END()
 	}
-    | expression T_NOT_EQUAL expression %prec MATH_COMPARE_OPS
+    | expression T_NOT_EQUAL expression 
 	{
 		GPL_BLOCK_BEGIN("expression[7]")
 		std::shared_ptr<IExpression> pLHS($1);
@@ -891,7 +890,7 @@ expression:
 		$$ = new NotEqualExpression(pLHS, pRHS);
 		GPL_BLOCK_END()
 	}
-    | expression T_PLUS expression  %prec MATH_SIMPLE_OPS
+    | expression T_PLUS expression 
 	{
 		GPL_BLOCK_BEGIN("expression[8]")
 		std::shared_ptr<IExpression> pLHS($1);
@@ -899,7 +898,7 @@ expression:
 		$$ = new AddExpression(pLHS, pRHS);
 		GPL_BLOCK_END()
 	}
-    | expression T_MINUS expression %prec MATH_SIMPLE_OPS
+    | expression T_MINUS expression 
 	{
 		GPL_BLOCK_BEGIN("expression[9]")
 		std::shared_ptr<IExpression> pLHS($1);
@@ -907,7 +906,7 @@ expression:
 		$$ = new MinusExpression(pLHS, pRHS);
 		GPL_BLOCK_END()
 	}
-    | expression T_ASTERISK expression %prec MATH_COMPLEX_OPS
+    | expression T_ASTERISK expression 
 	{
 		GPL_BLOCK_BEGIN("expression[10]")
 		std::shared_ptr<IExpression> pLHS($1);
@@ -915,7 +914,7 @@ expression:
 		$$ = new MultiplyExpression(pLHS, pRHS);
 		GPL_BLOCK_END()
 	}
-    | expression T_DIVIDE expression %prec MATH_COMPLEX_OPS
+    | expression T_DIVIDE expression
 	{
 		GPL_BLOCK_BEGIN("expression[11]")
 		std::shared_ptr<IExpression> pLHS($1);
@@ -923,7 +922,7 @@ expression:
 		$$ = new DivideExpression(pLHS, pRHS);
 		GPL_BLOCK_END()
 	}
-    | expression T_MOD expression %prec MATH_COMPLEX_OPS
+    | expression T_MOD expression
 	{
 		GPL_BLOCK_BEGIN("expression[11]")
 		std::shared_ptr<IExpression> pLHS($1);
@@ -940,7 +939,7 @@ expression:
 		$$ = new MultiplyExpression(pLHS, pRHS);
 		GPL_BLOCK_END()
 	}
-    | T_NOT  expression %prec UNARY_OPS
+    | T_NOT  expression 
 	{
 		GPL_BLOCK_BEGIN("expression[13]")
 		std::shared_ptr<IExpression> pOperand($2);

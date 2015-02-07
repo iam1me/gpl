@@ -310,14 +310,6 @@ void handle_illegal_token()
 			return T_MINUS_ASSIGN;
 		}
 
-"++"		{
-			return T_PLUS_PLUS;
-		}
-
-"--"		{
-			return T_MINUS_MINUS;
-		}
-
 "*"		{
 			return T_ASTERISK;
 		}
