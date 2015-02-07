@@ -121,12 +121,24 @@ inline std::shared_ptr<Symbol> get_symbol(std::string name, bool* bIsArray)
 #define GPL_BLOCK_END()\
 	} catch(const gpl_exception& ex) { \
 		error_handler.error(ex.get_error(), ex.get_argument(0), ex.get_argument(1), ex.get_argument(2)); \
+		switch(ex.get_severity())\
+		{	case FATAL:\
+				YYABORT;\
+				break;\
+			case DO_NOT_RUN:\
+				break;\
+			case CONTINUE:\
+			case IGNORE:\
+				break;\
+		}\
 	} catch (const std::exception& ex) { \
 		TRACE_ERROR("std::exception in '" << __gpl_block_name << "': "  << ex.what()) \
 		error_handler.error(Error::UNDEFINED_ERROR, ex.what()); \
+		YYABORT;\
 	} catch (...) { \
 		TRACE_ERROR("Unknown Exception in '" << __gpl_block_name << "'")\
 		error_handler.error(Error::UNDEFINED_ERROR, "Unknown Exception");\
+		YYABORT;\
 	}\
 	TRACE_VERBOSE("GPL_BLOCK_END '" << __gpl_block_name << "' (Total Error Count: " \
 		<< Error::num_errors() << ")")
@@ -210,19 +222,20 @@ inline std::shared_ptr<Symbol> get_symbol(std::string name, bool* bIsArray)
 	Example: "a = b = c" should be evaluated as
 		 "a = (b = c)"
 ********************************************************/
-%precedence ASSIGN_OPS
-%right T_ASSIGN              "="
-%right T_PLUS_ASSIGN         "+="
-%right T_MINUS_ASSIGN        "-="
+%token T_ASSIGN              "="
+%token T_PLUS_ASSIGN         "+="
+%token T_MINUS_ASSIGN        "-="
+%right T_ASSIGN T_PLUS_ASSIGN T_MINUS_ASSIGN
 
 /********************************************************
 	Logic Operators
-	Precedence Level 2. Group to the left.
-	Example: "a && b || c" ==> "(a && b) || c"
+	NOTE: And has higher precedence than Or
 ********************************************************/
-%precedence LOGIC_COMPARE_OPS
-%left T_AND                 "&&"
-%left T_OR                  "||"
+%token T_OR "||"
+%left T_OR 
+
+%token T_AND "&&"
+%left T_AND
 
 /********************************************************
 	GPL Object Comparison Functions
@@ -286,7 +299,6 @@ inline std::shared_ptr<Symbol> get_symbol(std::string name, bool* bIsArray)
 	Scope Operators
 	Precedence Level 7
 ********************************************************/
-%precedence SCOPE_OPS
 %token T_PERIOD "."
 
 /********************************************************
@@ -355,6 +367,9 @@ variable_declaration:
     simple_type  T_ID  optional_initializer
 	{
 		GPL_BLOCK_BEGIN("variable_declaration[0]")
+		
+		if(!$2) YYABORT;
+
 		std::string var_name(*$2);
 		delete $2;
 
@@ -372,6 +387,38 @@ variable_declaration:
 
 				TRACE_VERBOSE("Evaluating Expression...")
 				std::shared_ptr<IValue> init_val = init_expr->eval();
+
+				Gpl_type init_type = init_val->get_type();
+				switch($1)
+				{
+					case INT:
+						if(init_type != INT)
+							throw bad_initial_value(var_name);
+						break;
+
+					case DOUBLE:
+						if(!(init_type & (INT|DOUBLE)))
+							throw bad_initial_value(var_name);
+						break;
+
+					case STRING:
+						if(!(init_type & (INT|DOUBLE|STRING)))
+							throw bad_initial_value(var_name);
+						break;
+
+					case GAME_OBJECT:
+						if(init_type != GAME_OBJECT)
+							throw bad_initial_value(var_name);
+						break;
+
+					/*case ANIMATION_BLOCK:
+						if(init_type != ANIMATION_BlOCK)
+							throw bad_initial_value(var_name);
+						break;*/
+
+					default:
+						throw std::logic_error("Unhandled type: " + gpl_type_to_string(init_type));
+				}
 			
 				TRACE_VERBOSE("Registering Symbol: " << var_name << "(has initial value)")
 				InsertSymbol(var_name, $1, init_val);
@@ -389,7 +436,11 @@ variable_declaration:
     | simple_type  T_ID  T_LBRACKET expression T_RBRACKET
 	{
 		GPL_BLOCK_BEGIN("variable_declaration[1]")
+
+		if(!$2 || !$4)	YYABORT;
+
 		std::string var_name(*$2);
+		TRACE_VERBOSE("Checking to see if the symbol '" << var_name << "' is already defined")
 		delete $2;
 
 		bool bIsArray;
@@ -400,21 +451,28 @@ variable_declaration:
 		}
 		else
 		{
+			TRACE_VERBOSE("Checking to see if the Index is of the appropriate type...")
 			std::shared_ptr<IExpression> ndx_expr($4);
-			if(ndx_expr->get_type() != INT)
+			/*if(ndx_expr->get_type() != INT)
 			{
-				//error_handler.error(Error::ARRAY_INDEX_MUST_BE_AN_INTEGER);
-				throw invalid_index_type();
+				//throw invalid_index_type(var_name, ndx_expr->get_type());
+				throw invalid_array_size(var_name, ndx_val->get_string());
 			}
 
+			TRACE_VERBOSE("Checking the index size...")*/
 			std::shared_ptr<IValue> ndx_val = ndx_expr->eval();
+			if(ndx_val->get_type() != INT)
+			{
+				throw invalid_array_size(var_name, ndx_val->get_string());
+			}
+
 			int array_size = ndx_val->get_int();
 			if(array_size <= 0)
 			{
-				//error_handler.error(Error::INVALID_ARRAY_SIZE);
-				throw invalid_array_size();
+				throw invalid_array_size(var_name, ndx_val->get_string());
 			}
 
+			TRACE_VERBOSE("Creating the set of variables")
 			for(int i = 0; i < array_size; i++)
 			{
 				std::string name = var_name + "[";
@@ -494,6 +552,8 @@ parameter:
     T_ID T_ASSIGN expression
 	{
 		GPL_BLOCK_BEGIN("paramter[0]")
+		if(!$1 || !$3) YYABORT;
+
 		try
 		{
 			std::shared_ptr<Symbol> pSymbol(
@@ -520,6 +580,7 @@ parameter:
 forward_declaration:
     T_FORWARD T_ANIMATION T_ID T_LPAREN animation_parameter T_RPAREN
 	{
+		if(!$3) YYABORT;
 		//free the ID
 		delete $3;
 	}
@@ -676,9 +737,9 @@ exit_statement:
 
 //---------------------------------------------------------------------
 assign_statement:
-    variable T_ASSIGN expression %prec ASSIGN_OPS
-    | variable T_PLUS_ASSIGN expression %prec ASSIGN_OPS
-    | variable T_MINUS_ASSIGN expression %prec ASSIGN_OPS
+    variable T_ASSIGN expression 
+    | variable T_PLUS_ASSIGN expression
+    | variable T_MINUS_ASSIGN expression
     ;
 
 //---------------------------------------------------------------------
@@ -695,13 +756,11 @@ variable:
 		std::shared_ptr<Symbol> pSymbol = get_symbol(var_name, &bIsArray);
 		if(!pSymbol)
 		{
-			//error_handler.error(Error::UNDECLARED_VARIABLE, *$1);
 			throw undeclared_variable(var_name);
 		}
 		else if(bIsArray)
 		{
-			//error_handler.error(Error::INVALID_ARRAY_SIZE, "-1");
-			throw invalid_array_size();
+			throw not_an_array(var_name);
 		}
 		else
 		{
@@ -715,14 +774,17 @@ variable:
 		GPL_BLOCK_BEGIN("variable[1]")
 		$$ = NULL;
 
+		if(!$1 || !$3) YYABORT;
+
 		std::string var_name(*$1);
+		TRACE_VERBOSE("Attempting to index into the array '" << var_name 
+			<< "'. Checking to see if the array exists...")
 		delete $1;
 
 		bool bIsArray;
 		std::shared_ptr<Symbol> pSymbol = get_symbol(var_name, &bIsArray);
 		if(!pSymbol)
 		{
-			//error_handler.error(Error::UNDECLARED_VARIABLE, *$1);
 			throw undeclared_variable(var_name);
 		}
 		else if(!bIsArray)
@@ -733,7 +795,7 @@ variable:
 		else 
 		{
 			std::shared_ptr<IExpression> ndx_expr($3);
-			$$ = new ArrayReferenceExpression(std::string(*$1), ndx_expr);
+			$$ = new ArrayReferenceExpression(var_name, ndx_expr);
 		}
 
 		GPL_BLOCK_END()
@@ -760,7 +822,7 @@ variable:
 //---------------------------------------------------------------------
 expression:
     primary_expression
-    | expression T_OR expression %prec LOGIC_COMPARE_OPS
+    | expression T_OR expression
 	{
 		GPL_BLOCK_BEGIN("expression[0]")
 		std::shared_ptr<IExpression> pLHS($1);
@@ -768,7 +830,7 @@ expression:
 		$$ = new OrExpression(pLHS, pRHS);
 		GPL_BLOCK_END()
 	}
-    | expression T_AND expression %prec LOGIC_COMPARE_OPS
+    | expression T_AND expression
 	{
 		GPL_BLOCK_BEGIN("expression[1]")
 		std::shared_ptr<IExpression> pLHS($1);
@@ -982,8 +1044,11 @@ primary_expression:
     | T_DOUBLE_CONSTANT
 	{
 		GPL_BLOCK_BEGIN("primary_expression[5]")
-		std::shared_ptr<IValue> pval(new ConstantValue($1));
+		std::shared_ptr<IValue> pval(new ConstantValue((double)$1));
 		$$ = new ValueExpression(pval);
+
+		TRACE_VERBOSE("pval type: " << gpl_type_to_string(pval->get_type()))
+		TRACE_VERBOSE("pval->get_double(): " << pval->get_double())
 		GPL_BLOCK_END()
 	}
     | T_STRING_CONSTANT

@@ -29,6 +29,16 @@ std::string gpl_exception::get_argument(int i) const
 
 	return _args[i];
 }
+	
+void gpl_exception::set_argument(int i, std::string arg)
+{
+	if(i < 0 || i > 2)
+	{
+		throw std::invalid_argument("Array Index Out of Bounds");
+	}
+
+	_args[i] = arg;
+}
 
 int gpl_exception::get_line() const
 {
@@ -85,25 +95,12 @@ object_operand_expected::object_operand_expected()
 object_operand_expected::~object_operand_expected()
 {}
 
-invalid_array_size::invalid_array_size()
-	: gpl_exception(Error::INVALID_ARRAY_SIZE)
+invalid_array_size::invalid_array_size(std::string array_name, std::string illegal_size)
+	: gpl_exception(Error::INVALID_ARRAY_SIZE, array_name, illegal_size)
 {}
 
-invalid_array_size::~invalid_array_size()
-{}
-
-index_out_of_bounds::index_out_of_bounds()
-	: gpl_exception(Error::ARRAY_INDEX_OUT_OF_BOUNDS)
-{}
-
-index_out_of_bounds::~index_out_of_bounds()
-{}
-
-invalid_index_type::invalid_index_type()
-	: gpl_exception(Error::ARRAY_INDEX_MUST_BE_AN_INTEGER)
-{}
-
-invalid_index_type::~invalid_index_type()
+index_out_of_bounds::index_out_of_bounds(std::string array_name, int ndx)
+	: gpl_exception(Error::ARRAY_INDEX_OUT_OF_BOUNDS, array_name, std::to_string(ndx))
 {}
 
 undeclared_variable::undeclared_variable(std::string var_name)
@@ -130,4 +127,40 @@ not_an_array::~not_an_array()
 std::string not_an_array::get_variable_name()
 {
 	return get_argument(0);
+}
+	
+invalid_index_type::invalid_index_type(std::string array_name, Gpl_type invalid_type)
+	: gpl_exception(Error::ARRAY_INDEX_MUST_BE_AN_INTEGER, array_name)
+{
+	_type = invalid_type;
+	switch(_type)
+	{
+		case INT:
+			throw std::logic_error("INT is, actually, a valid index type. The only one. fix this.");
+
+		case DOUBLE:
+			set_argument(1, "A double expression");
+			break;
+
+		case STRING:
+			set_argument(1, "A string expression");
+			break;
+
+		case ANIMATION_BLOCK:
+			set_argument(1, "A animation_block expression");
+			break;
+
+		default:
+			throw std::runtime_error("An unaccounted type: " + gpl_type_to_string(_type));
+	}
+}
+
+std::string invalid_index_type::get_array_name() const
+{
+	return get_argument(0);
+}
+
+Gpl_type invalid_index_type::get_invalid_type() const
+{
+	return _type;
 }

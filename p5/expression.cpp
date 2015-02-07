@@ -79,6 +79,11 @@ ArrayReferenceExpression::ArrayReferenceExpression
 		throw std::runtime_error("Undefined Array Name");
 	}
 
+	if(ndx_expr->get_type() != INT)
+	{
+		throw invalid_index_type(array_name, ndx_expr->get_type());
+	}
+
 	_type = pSymbol->get_type();
 	add_child(ndx_expr);
 }
@@ -102,7 +107,7 @@ std::shared_ptr<IValue> ArrayReferenceExpression::eval() const
 
 	if(!pSymbol)
 	{
-		throw index_out_of_bounds();
+		throw index_out_of_bounds(_arrayName, ndx_val->get_int());
 	}
 
 	TRACE_VERBOSE("ArrayReferenceExpression::eval() - Symbol found. Returning ReferenceValue")
@@ -710,7 +715,7 @@ std::shared_ptr<IValue> EqualExpression::eval() const
 	{
 		std::string str1 = pval1->get_string();
 		std::string str2 = pval2->get_string();
-		result = (pval1 == pval2);
+		result = (str1 == str2);
 	}
 	else
 	{
@@ -753,7 +758,7 @@ std::shared_ptr<IValue> NotEqualExpression::eval() const
 	{
 		std::string str1 = pval1->get_string();
 		std::string str2 = pval2->get_string();
-		result = (pval1 != pval2);
+		result = (str1 != str2);
 	}
 	else
 	{
@@ -796,7 +801,7 @@ std::shared_ptr<IValue> LessThanExpression::eval() const
 	{
 		std::string str1 = pval1->get_string();
 		std::string str2 = pval2->get_string();
-		result = (pval1 < pval2);
+		result = (str1 < str2);
 	}
 	else
 	{
@@ -839,7 +844,7 @@ std::shared_ptr<IValue> LessThanEqualExpression::eval() const
 	{
 		std::string str1 = pval1->get_string();
 		std::string str2 = pval2->get_string();
-		result = (pval1 <= pval2);
+		result = (str1 <= str2);
 	}
 	else
 	{
@@ -882,7 +887,7 @@ std::shared_ptr<IValue> GreaterThanExpression::eval() const
 	{
 		std::string str1 = pval1->get_string();
 		std::string str2 = pval2->get_string();
-		result = (pval1 > pval2);
+		result = (str1 > str2);
 	}
 	else
 	{
@@ -925,7 +930,7 @@ std::shared_ptr<IValue> GreaterThanEqualExpression::eval() const
 	{
 		std::string str1 = pval1->get_string();
 		std::string str2 = pval2->get_string();
-		result = (pval1 >= pval2);
+		result = (str1 >= str2);
 	}
 	else
 	{
