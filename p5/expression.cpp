@@ -723,12 +723,16 @@ std::shared_ptr<IValue> EqualExpression::eval() const
 		std::string str1 = pval1->get_string();
 		std::string str2 = pval2->get_string();
 		result = (str1 == str2);
+
+		TRACE_VERBOSE("EQUAL('" << str1 << "', '" << str2 << "') = " << result)
 	}
 	else
 	{
 		double dbl1 = pval1->get_double();
 		double dbl2 = pval2->get_double();
 		result = (dbl1 == dbl2);
+
+		TRACE_VERBOSE("EQUAL(" << dbl1 << ", " << dbl2 << ") = " << result)
 	}
 	
 	pret.reset(new ConstantValue(result));

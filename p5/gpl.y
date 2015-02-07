@@ -245,15 +245,16 @@ inline std::shared_ptr<Symbol> get_symbol(std::string name, bool* bIsArray)
 	Precedence Level 4. Group to the left.
 	Example: "a > b <= c" ==> "(a > b) <= c"
 ********************************************************/
+%token T_EQUAL               "=="
+%token T_NOT_EQUAL           "!="
+%left  T_EQUAL T_NOT_EQUAL
+
 %token T_LESS                "<"
 %token T_GREATER             ">"
 %token T_LESS_EQUAL          "<="
 %token T_GREATER_EQUAL       ">="
 %left T_LESS T_GREATER T_LESS_EQUAL T_GREATER_EQUAL
 
-%token T_EQUAL               "=="
-%token T_NOT_EQUAL           "!="
-%left  T_EQUAL T_NOT_EQUAL
 
 /********************************************************
 	Simple Mathematical Operators
@@ -279,11 +280,11 @@ inline std::shared_ptr<Symbol> get_symbol(std::string name, bool* bIsArray)
 	Unary Operators
 	Precedence Level 6.
 ********************************************************/
-%precedence UNARY_OPS
 %token T_PLUS_PLUS           "++"
 %token T_MINUS_MINUS         "--"
 %token T_NOT                 "!"
 %nonassoc T_PLUS_PLUS T_MINUS_MINUS T_NOT
+%precedence UNARY_OPS
 
 /********************************************************
 	Scope Operators
@@ -424,7 +425,7 @@ variable_declaration:
 						throw std::logic_error("Unhandled type: " + gpl_type_to_string(init_type));
 				}
 
-				TRACE_VERBOSE("Registering Symbol: " << var_name << "(has initial value)")
+				TRACE_VERBOSE("Registering Symbol: " << var_name << " = " << init_val->get_string())
 				InsertSymbol(var_name, $1, init_val);
 			}
 			else
