@@ -113,15 +113,16 @@ inline std::shared_ptr<Symbol> get_symbol(std::string name, bool* bIsArray)
 	return pSymbol;
 }
 
-#define GPL_BLOCK_BEGIN(block_name)\
+#define GPL_BEGIN_EXPR_BLOCK(block_name)\
 	std::string __gpl_block_name = block_name;\
-	TRACE_VERBOSE("GPL_BLOCK_BEGIN '" << __gpl_block_name << "'")\
+	TRACE_VERBOSE("GPL_BEGIN_EXPR_BLOCK '" << __gpl_block_name << "'")\
 	try{
 
-#define GPL_BLOCK_END()\
+#define GPL_END_EXPR_BLOCK(ret_param)\
 	} catch(const gpl_exception& ex) { \
 		error_handler.error(ex.get_error(), ex.get_argument(0), ex.get_argument(1), ex.get_argument(2)); \
-		YYABORT;\
+		std::shared_ptr<IValue> pval(new ConstantValue(0));\
+		ret_param = new ValueExpression(pval);\
 	} catch (const std::exception& ex) { \
 		TRACE_ERROR("std::exception in '" << __gpl_block_name << "': "  << ex.what()) \
 		error_handler.error(Error::UNDEFINED_ERROR, ex.what()); \
@@ -131,9 +132,27 @@ inline std::shared_ptr<Symbol> get_symbol(std::string name, bool* bIsArray)
 		error_handler.error(Error::UNDEFINED_ERROR, "Unknown Exception");\
 		YYABORT;\
 	}\
-	TRACE_VERBOSE("GPL_BLOCK_END '" << __gpl_block_name << "' (Total Error Count: " \
+	TRACE_VERBOSE("GPL_END_EXPR_BLOCK '" << __gpl_block_name << "' (Total Error Count: " \
 		<< Error::num_errors() << ")")
 	
+
+#define GPL_BEGIN_DECL_BLOCK(block_name)\
+	std::string __gpl_block_name = block_name;\
+	TRACE_VERBOSE("GPL_BEGIN_DECL_BLOCK '" << __gpl_block_name << "'")\
+	try{
+
+
+#define GPL_END_DECL_BLOCK()\
+	}catch(const gpl_exception& ex){\
+		ex.write_exception();\
+	}catch(const std::exception& ex){\
+		TRACE_ERROR("what():" << ex.what())\
+		YYABORT;\
+	}catch(...){\
+		TRACE_ERROR("Unknown Exception Encountered")\
+		YYABORT;\
+	}
+
 %} 
 
 /*********************************************
@@ -356,11 +375,8 @@ declaration:
 //---------------------------------------------------------------------
 variable_declaration:
     simple_type  T_ID  optional_initializer
-	{
-		GPL_BLOCK_BEGIN("variable_declaration[0]")
-		
-		if(!$2) YYABORT;
-
+	{				
+		GPL_BEGIN_DECL_BLOCK("variable_declaration[0]")
 		std::string var_name(*$2);
 		delete $2;
 
@@ -434,15 +450,12 @@ variable_declaration:
 				InsertSymbol(var_name, $1);
 			}
 		}
-
-		GPL_BLOCK_END()
+		GPL_END_DECL_BLOCK()
 	}
 
     | simple_type  T_ID  T_LBRACKET expression T_RBRACKET
 	{
-		GPL_BLOCK_BEGIN("variable_declaration[1]")
-
-		if(!$2 || !$4)	YYABORT;
+		GPL_BEGIN_DECL_BLOCK("variable_declaration[1]")
 
 		std::string var_name(*$2);
 		TRACE_VERBOSE("Checking to see if the symbol '" << var_name << "' is already defined")
@@ -458,13 +471,6 @@ variable_declaration:
 		{
 			TRACE_VERBOSE("Checking to see if the Index is of the appropriate type...")
 			std::shared_ptr<IExpression> ndx_expr($4);
-			/*if(ndx_expr->get_type() != INT)
-			{
-				//throw invalid_index_type(var_name, ndx_expr->get_type());
-				throw invalid_array_size(var_name, ndx_val->get_string());
-			}
-
-			TRACE_VERBOSE("Checking the index size...")*/
 			std::shared_ptr<IValue> ndx_val = ndx_expr->eval();
 			if(ndx_val->get_type() != INT)
 			{
@@ -487,7 +493,7 @@ variable_declaration:
 				InsertSymbol(name, $1, init_val);
 			}
 		}
-		GPL_BLOCK_END()
+		GPL_END_DECL_BLOCK()
 	}
     ;
 
@@ -495,21 +501,15 @@ variable_declaration:
 simple_type:
     T_INT
 	{
-		GPL_BLOCK_BEGIN("simple_type[0]: T_INT")
 		$$ = INT;
-		GPL_BLOCK_END()
 	}
     | T_DOUBLE
 	{
-		GPL_BLOCK_BEGIN("simple_type[1]: T_DOUBLE")
 		$$ = DOUBLE;
-		GPL_BLOCK_END()
 	}
     | T_STRING
 	{
-		GPL_BLOCK_BEGIN("simple_type[2]: T_STRING")
 		$$ = STRING;
-		GPL_BLOCK_END()
 	}
     ;
 
@@ -556,9 +556,6 @@ parameter_list :
 parameter:
     T_ID T_ASSIGN expression
 	{
-		GPL_BLOCK_BEGIN("paramter[0]")
-		if(!$1 || !$3) YYABORT;
-
 		try
 		{
 			std::shared_ptr<Symbol> pSymbol(
@@ -577,7 +574,6 @@ parameter:
 
 		//free the ID
 		delete $1;
-		GPL_BLOCK_END()
 	}
     ;
 
@@ -751,7 +747,7 @@ assign_statement:
 variable:
     T_ID
 	{
-		GPL_BLOCK_BEGIN("variable[0]")
+		GPL_BEGIN_EXPR_BLOCK("variable[0]")
 		$$ = NULL;
 		
 		std::string var_name(*$1);
@@ -772,11 +768,11 @@ variable:
 			std::shared_ptr<IValue> pVal(new ReferenceValue(pSymbol));
 			$$ = new ValueExpression(pVal);
 		}
-		GPL_BLOCK_END()
+		GPL_END_EXPR_BLOCK($$)
 	}
     | T_ID T_LBRACKET expression T_RBRACKET
 	{
-		GPL_BLOCK_BEGIN("variable[1]")
+		GPL_BEGIN_EXPR_BLOCK("variable[1]")
 		$$ = NULL;
 
 		if(!$1 || !$3) YYABORT;
@@ -803,23 +799,23 @@ variable:
 			$$ = new ArrayReferenceExpression(var_name, ndx_expr);
 		}
 
-		GPL_BLOCK_END()
+		GPL_END_EXPR_BLOCK($$)
 	}
     | T_ID T_PERIOD T_ID
 	{
-		GPL_BLOCK_BEGIN("variable[2]")
+		GPL_BEGIN_EXPR_BLOCK("variable[2]")
 		throw std::logic_error("T_ID T_PERIOD T_ID - Not Implemented Yet");
 		delete $1; // free the ID
 		delete $3; // free the ID
-		GPL_BLOCK_END()
+		GPL_END_EXPR_BLOCK($$)
 	}
     | T_ID T_LBRACKET expression T_RBRACKET T_PERIOD T_ID
 	{
-		GPL_BLOCK_BEGIN("variable[3]")
+		GPL_BEGIN_EXPR_BLOCK("variable[3]")
 		throw std::logic_error("T_ID T_LBRACKET expression T_RBRACKET T_PERIOD T_ID - Not Implemented yet");
 		delete $1; // free the ID
 		delete $6; // free the ID
-		GPL_BLOCK_END()
+		GPL_END_EXPR_BLOCK($$)
 	}
     ;
 
@@ -829,127 +825,127 @@ expression:
     primary_expression
     | expression T_OR expression
 	{
-		GPL_BLOCK_BEGIN("expression[0]")
+		GPL_BEGIN_EXPR_BLOCK("expression[0]")
 		std::shared_ptr<IExpression> pLHS($1);
 		std::shared_ptr<IExpression> pRHS($3);
 		$$ = new OrExpression(pLHS, pRHS);
-		GPL_BLOCK_END()
+		GPL_END_EXPR_BLOCK($$)
 	}
     | expression T_AND expression
 	{
-		GPL_BLOCK_BEGIN("expression[1]")
+		GPL_BEGIN_EXPR_BLOCK("expression[1]")
 		std::shared_ptr<IExpression> pLHS($1);
 		std::shared_ptr<IExpression> pRHS($3);
 		$$ = new AndExpression(pLHS, pRHS);
-		GPL_BLOCK_END()
+		GPL_END_EXPR_BLOCK($$)
 	}
     | expression T_LESS_EQUAL expression 
 	{
-		GPL_BLOCK_BEGIN("expression[2]")
+		GPL_BEGIN_EXPR_BLOCK("expression[2]")
 		std::shared_ptr<IExpression> pLHS($1);
 		std::shared_ptr<IExpression> pRHS($3);
 		$$ = new LessThanEqualExpression(pLHS, pRHS);
-		GPL_BLOCK_END()
+		GPL_END_EXPR_BLOCK($$)
 	}
     | expression T_GREATER_EQUAL  expression 
 	{
-		GPL_BLOCK_BEGIN("expression[3]")
+		GPL_BEGIN_EXPR_BLOCK("expression[3]")
 		std::shared_ptr<IExpression> pLHS($1);
 		std::shared_ptr<IExpression> pRHS($3);
 		$$ = new GreaterThanEqualExpression(pLHS, pRHS);
-		GPL_BLOCK_END()
+		GPL_END_EXPR_BLOCK($$)
 	}
     | expression T_LESS expression 
 	{
-		GPL_BLOCK_BEGIN("expression[4]")
+		GPL_BEGIN_EXPR_BLOCK("expression[4]")
 		std::shared_ptr<IExpression> pLHS($1);
 		std::shared_ptr<IExpression> pRHS($3);
 		$$ = new LessThanExpression(pLHS, pRHS);
-		GPL_BLOCK_END()
+		GPL_END_EXPR_BLOCK($$)
 	}
     | expression T_GREATER  expression 
 	{
-		GPL_BLOCK_BEGIN("expression[5]")
+		GPL_BEGIN_EXPR_BLOCK("expression[5]")
 		std::shared_ptr<IExpression> pLHS($1);
 		std::shared_ptr<IExpression> pRHS($3);
 		$$ = new GreaterThanExpression(pLHS, pRHS);
-		GPL_BLOCK_END()
+		GPL_END_EXPR_BLOCK($$)
 	}
     | expression T_EQUAL expression 
 	{
-		GPL_BLOCK_BEGIN("expression[6]")
+		GPL_BEGIN_EXPR_BLOCK("expression[6]")
 		std::shared_ptr<IExpression> pLHS($1);
 		std::shared_ptr<IExpression> pRHS($3);
 		$$ = new EqualExpression(pLHS, pRHS);
-		GPL_BLOCK_END()
+		GPL_END_EXPR_BLOCK($$)
 	}
     | expression T_NOT_EQUAL expression 
 	{
-		GPL_BLOCK_BEGIN("expression[7]")
+		GPL_BEGIN_EXPR_BLOCK("expression[7]")
 		std::shared_ptr<IExpression> pLHS($1);
 		std::shared_ptr<IExpression> pRHS($3);
 		$$ = new NotEqualExpression(pLHS, pRHS);
-		GPL_BLOCK_END()
+		GPL_END_EXPR_BLOCK($$)
 	}
     | expression T_PLUS expression 
 	{
-		GPL_BLOCK_BEGIN("expression[8]")
+		GPL_BEGIN_EXPR_BLOCK("expression[8]")
 		std::shared_ptr<IExpression> pLHS($1);
 		std::shared_ptr<IExpression> pRHS($3);
 		$$ = new AddExpression(pLHS, pRHS);
-		GPL_BLOCK_END()
+		GPL_END_EXPR_BLOCK($$)
 	}
     | expression T_MINUS expression 
 	{
-		GPL_BLOCK_BEGIN("expression[9]")
+		GPL_BEGIN_EXPR_BLOCK("expression[9]")
 		std::shared_ptr<IExpression> pLHS($1);
 		std::shared_ptr<IExpression> pRHS($3);
 		$$ = new MinusExpression(pLHS, pRHS);
-		GPL_BLOCK_END()
+		GPL_END_EXPR_BLOCK($$)
 	}
     | expression T_ASTERISK expression 
 	{
-		GPL_BLOCK_BEGIN("expression[10]")
+		GPL_BEGIN_EXPR_BLOCK("expression[10]")
 		std::shared_ptr<IExpression> pLHS($1);
 		std::shared_ptr<IExpression> pRHS($3);
 		$$ = new MultiplyExpression(pLHS, pRHS);
-		GPL_BLOCK_END()
+		GPL_END_EXPR_BLOCK($$)
 	}
     | expression T_DIVIDE expression
 	{
-		GPL_BLOCK_BEGIN("expression[11]")
+		GPL_BEGIN_EXPR_BLOCK("expression[11]")
 		std::shared_ptr<IExpression> pLHS($1);
 		std::shared_ptr<IExpression> pRHS($3);
 		$$ = new DivideExpression(pLHS, pRHS);
-		GPL_BLOCK_END()
+		GPL_END_EXPR_BLOCK($$)
 	}
     | expression T_MOD expression
 	{
-		GPL_BLOCK_BEGIN("expression[11]")
+		GPL_BEGIN_EXPR_BLOCK("expression[11]")
 		std::shared_ptr<IExpression> pLHS($1);
 		std::shared_ptr<IExpression> pRHS($3);
 		$$ = new ModExpression(pLHS, pRHS);
-		GPL_BLOCK_END()
+		GPL_END_EXPR_BLOCK($$)
 	}
     | T_MINUS  expression %prec UNARY_OPS
 	{
-		GPL_BLOCK_BEGIN("expression[12]")
+		GPL_BEGIN_EXPR_BLOCK("expression[12]")
 		std::shared_ptr<IValue> pVal(new ConstantValue(-1));
 		std::shared_ptr<IExpression> pLHS(new ValueExpression(pVal));
 		std::shared_ptr<IExpression> pRHS($2);
 		$$ = new MultiplyExpression(pLHS, pRHS);
-		GPL_BLOCK_END()
+		GPL_END_EXPR_BLOCK($$)
 	}
     | T_NOT  expression 
 	{
-		GPL_BLOCK_BEGIN("expression[13]")
+		GPL_BEGIN_EXPR_BLOCK("expression[13]")
 		std::shared_ptr<IExpression> pOperand($2);
 		$$ = new NotExpression(pOperand);
-		GPL_BLOCK_END()
+		GPL_END_EXPR_BLOCK($$)
 	}
     | math_operator T_LPAREN expression T_RPAREN %prec SUB_EXPR_OPS
 	{
-		GPL_BLOCK_BEGIN("expression[14]")
+		GPL_BEGIN_EXPR_BLOCK("expression[14]")
 		std::shared_ptr<IExpression> pArg($3);
 		switch($1)
 		{
@@ -996,16 +992,16 @@ expression:
 			default:
 				throw std::runtime_error("That math_operator isn't implemented yet");
 		}
-		GPL_BLOCK_END()
+		GPL_END_EXPR_BLOCK($$)
 	}
     | variable geometric_operator variable %prec OBJECT_COMPARE_OPS
 	{
-		GPL_BLOCK_BEGIN("expression[15]")
+		GPL_BEGIN_EXPR_BLOCK("expression[15]")
 		std::shared_ptr<IExpression> pLHS($1);
 		std::shared_ptr<IExpression> pRHS($3);
 		
 		throw std::runtime_error("That geometric_operator isn't implemented yet");
-		GPL_BLOCK_END()
+		GPL_END_EXPR_BLOCK($$)
 	}
     ;
 
@@ -1013,56 +1009,56 @@ expression:
 primary_expression:
     T_LPAREN  expression T_RPAREN
 	{
-		GPL_BLOCK_BEGIN("primary_expression[0]")
+		GPL_BEGIN_EXPR_BLOCK("primary_expression[0]")
 		$$ = $2;
-		GPL_BLOCK_END()
+		GPL_END_EXPR_BLOCK($$)
 	}
     | variable
 	{
-		GPL_BLOCK_BEGIN("primary_expression[1]")
+		GPL_BEGIN_EXPR_BLOCK("primary_expression[1]")
 		$$ = $1;
-		GPL_BLOCK_END()
+		GPL_END_EXPR_BLOCK($$)
 	}
     | T_INT_CONSTANT
 	{
-		GPL_BLOCK_BEGIN("primary_expression[2]")
+		GPL_BEGIN_EXPR_BLOCK("primary_expression[2]")
 		std::shared_ptr<IValue> pval(new ConstantValue($1));
 		$$ = new ValueExpression(pval);
 		TRACE_VERBOSE("pval->get_int(): " << pval->get_int());
 		TRACE_VERBOSE("eval()->get_int(): " << $$->eval()->get_int());
-		GPL_BLOCK_END()
+		GPL_END_EXPR_BLOCK($$)
 	}
     | T_TRUE
 	{
-		GPL_BLOCK_BEGIN("primary_expression[3]")
+		GPL_BEGIN_EXPR_BLOCK("primary_expression[3]")
 		std::shared_ptr<IValue> pval(new ConstantValue(1));
 		$$ = new ValueExpression(pval);
-		GPL_BLOCK_END()
+		GPL_END_EXPR_BLOCK($$)
 	}
     | T_FALSE
 	{
-		GPL_BLOCK_BEGIN("primary_expression[4]")
+		GPL_BEGIN_EXPR_BLOCK("primary_expression[4]")
 		std::shared_ptr<IValue> pval(new ConstantValue(0));
 		$$ = new ValueExpression(pval);
-		GPL_BLOCK_END()
+		GPL_END_EXPR_BLOCK($$)
 	}
     | T_DOUBLE_CONSTANT
 	{
-		GPL_BLOCK_BEGIN("primary_expression[5]")
+		GPL_BEGIN_EXPR_BLOCK("primary_expression[5]")
 		std::shared_ptr<IValue> pval(new ConstantValue((double)$1));
 		$$ = new ValueExpression(pval);
 
 		TRACE_VERBOSE("pval type: " << gpl_type_to_string(pval->get_type()))
 		TRACE_VERBOSE("pval->get_double(): " << pval->get_double())
-		GPL_BLOCK_END()
+		GPL_END_EXPR_BLOCK($$)
 	}
     | T_STRING_CONSTANT
 	{
-		GPL_BLOCK_BEGIN("primary_expresion[6]")
+		GPL_BEGIN_EXPR_BLOCK("primary_expresion[6]")
 		std::shared_ptr<IValue> pval(new ConstantValue(*$1));
-		$$ = new ValueExpression(pval);
 		delete $1;
-		GPL_BLOCK_END()
+		$$ = new ValueExpression(pval);
+		GPL_END_EXPR_BLOCK($$)
 	}
     ;
 
@@ -1070,15 +1066,11 @@ primary_expression:
 geometric_operator:
     T_TOUCHES
 	{
-		GPL_BLOCK_BEGIN("geometric_operator[0]")
 		$$ = TOUCHES;
-		GPL_BLOCK_END()
 	}
     | T_NEAR
 	{
-		GPL_BLOCK_BEGIN("geometric_operator[1]")
 		$$ = NEAR;
-		GPL_BLOCK_END()
 	}
     ;
 
