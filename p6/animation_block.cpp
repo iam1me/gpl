@@ -28,3 +28,9 @@ void Animation_block::execute(Game_object *argument)
 {
   // you have to implement this as part of p8
 }
+
+std::ostream& Animation_block::print(std::ostream &os) const
+{
+	os << "Animation_block::print()\n";
+	return os;
+}

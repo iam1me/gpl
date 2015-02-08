@@ -143,6 +143,7 @@ Graphics
 #include <string>
 #include <map>
 #include <vector>
+#include <memory>
 
 class Animation_block;
 
@@ -153,20 +154,21 @@ class Game_object
     Game_object(double red = 0.5, double green = 0.5, double blue = 0.5);
     virtual ~Game_object();
     const std::string type() const {return m_object_type_name;}
+   // virtual Game_object_type get_type() = 0;
 
     void draw();
 
     Status set_member_variable(std::string name, int value);
     Status set_member_variable(std::string name, double value);
     Status set_member_variable(std::string name, std::string value);
-    Status set_member_variable(std::string name, Animation_block *block);
+    Status set_member_variable(std::string name, const std::shared_ptr<Animation_block>& block);
 
     Status get_member_variable_type(std::string name, Gpl_type &type);
 
     Status get_member_variable(std::string name, int &value);
     Status get_member_variable(std::string name, double &value);
     Status get_member_variable(std::string name, std::string &value);
-    Status get_member_variable(std::string name, Animation_block *&value);
+    Status get_member_variable(std::string name, std::shared_ptr<Animation_block>& value);
 
     bool visible() {return m_visible;}
 
@@ -203,7 +205,7 @@ class Game_object
      { register_member_variable(DOUBLE, name, (void *) value);}
     void register_member_variable(std::string name, std::string *value)
      { register_member_variable(STRING, name, (void *) value);}
-    void register_member_variable(std::string name, Animation_block **value)
+    void register_member_variable(std::string name, std::shared_ptr<Animation_block>*value)
      { register_member_variable(ANIMATION_BLOCK, name, (void *) value);}
 
     Status mark_member_variable_as_derived(std::string name);
@@ -215,7 +217,7 @@ class Game_object
     double m_red;
     double m_green;
     double m_blue;
-    Animation_block *m_animation_block;
+    std::shared_ptr<Animation_block> m_animation_block;
     int m_visible;
     int m_proximity;
     bool m_should_draw;

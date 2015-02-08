@@ -179,14 +179,14 @@ void read_keypresses_from_standard_input_callback()
   while (true)
   {
     // skip whitespace (except actual spaces, they are legal input)
-    while (isspace(cin.peek()) && cin.peek() != ' ')
-      cin.ignore();
+    while (isspace(std::cin.peek()) && std::cin.peek() != ' ')
+      std::cin.ignore();
 
     char keypress;
-    cin.get(keypress);
+    std::cin.get(keypress);
 
     // if there was a problem (such as reaching EOF) stop
-    if (!cin.good())
+    if (!std::cin.good())
       break;
 
     switch(keypress)
@@ -217,7 +217,7 @@ void read_keypresses_from_standard_input_callback()
   glutIdleFunc(0);
 }
 
-Window::Window(int x, int y, int w, int h, string title, int speed,
+Window::Window(int x, int y, int w, int h, std::string title, int speed,
                double red, double green, double blue,
                bool read_keypresses_from_standard_input /* = false */
               )

@@ -33,7 +33,7 @@ class Animation_block : public Statement_block
 
     Symbol *get_parameter_symbol() {return m_parameter_symbol;}
 
-    string name() {return m_name;}
+    std::string name() {return m_name;}
 
     void mark_complete();
     bool complete();

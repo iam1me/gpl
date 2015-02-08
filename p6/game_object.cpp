@@ -275,7 +275,7 @@ Status Game_object::set_member_variable(string name, string value)
   return OK;
 }
 
-Status Game_object::set_member_variable(string name, Animation_block *value)
+Status Game_object::set_member_variable(string name, const std::shared_ptr<Animation_block>& value)
 {
   graphics_dirty = true;
   Typed_void_ptr *variable = lookup_registered_member_variable(name);
@@ -288,7 +288,8 @@ Status Game_object::set_member_variable(string name, Animation_block *value)
 
   // note, we don't dereference m_value as above because
   // we store Animation_blocks as pointers
-  *((Animation_block **) variable->m_value) = value;
+  //*((Animation_block **) variable->m_value) = value;
+  *((std::shared_ptr<Animation_block>*)(variable->m_value)) = value;
 
   updated(name);
   return OK;
@@ -332,7 +333,7 @@ Status Game_object::get_member_variable(string name, string &value)
   return OK;
 }
 
-Status Game_object::get_member_variable(string name, Animation_block *&value)
+Status Game_object::get_member_variable(string name, std::shared_ptr<Animation_block>& value)
 {
   Typed_void_ptr *variable = lookup_registered_member_variable(name);
   if (!variable)
@@ -342,7 +343,7 @@ Status Game_object::get_member_variable(string name, Animation_block *&value)
 
   // note, we don't dereference m_value as above because
   // we store Animation_blocks as pointers
-  value = *((Animation_block **) variable->m_value);
+  value = *((std::shared_ptr<Animation_block>*) variable->m_value);
   return OK;
 }
 
@@ -498,10 +499,10 @@ ostream & Game_object::print(ostream &os) const
         os << "string(\"" << *((string *) cur_member->m_value)<< "\")";
         break;
       case ANIMATION_BLOCK:
-        if (*((Animation_block **) (cur_member->m_value)) == 0)
+        if (*((std::shared_ptr<Animation_block>*) (cur_member->m_value)) == 0)
           os << "NULL";
         else
-          os << (*((Animation_block **) (cur_member->m_value)))->name();
+          os << (*((std::shared_ptr<Animation_block>*) (cur_member->m_value)))->name();
         break;
       default:
         // there is a programming bug if this is ever executed
