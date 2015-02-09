@@ -21,6 +21,11 @@ extern int line_count;            // current line in the input; from record.l
 #include "symbol_table.h"
 #include "expression.h"
 #include "value.h"
+#include "triangle.h"
+#include "rectangle.h"
+#include "circle.h"
+#include "pixmap.h"
+#include "textbox.h"
 %}
 
 %union 
@@ -45,14 +50,19 @@ extern int line_count;            // current line in the input; from record.l
 Error error_handler;
 
 std::shared_ptr<Symbol> InsertSymbol (std::string name, Gpl_type type,
-			std::shared_ptr<IValue> pval)
+			const std::shared_ptr<IValue>& pval)
 {
-	std::shared_ptr<Symbol> pSymbol(new Symbol(name, type, pval));	
+	TRACE_VERBOSE("InsertSymbol()...")
+	TRACE_VERBOSE("InsertSymbol('" << name << "', " << gpl_type_to_string(type) << ", " << pval->to_string())
+
+	std::shared_ptr<Symbol> pSymbol(new Symbol(name, type, pval));
 	if(!pSymbol)
 	{
+		TRACE_ERROR("Failed to construct Symbol")
 		throw std::runtime_error("Failed to construct Symbol '" + name + "' of type: " + gpl_type_to_string(type));
 	}
 
+	TRACE_VERBOSE("Calling Symbol_table::insert_symbol...")
 	bool result = Symbol_table::instance()->insert_symbol(pSymbol);
 	if(!result)
 	{
@@ -65,6 +75,8 @@ std::shared_ptr<Symbol> InsertSymbol (std::string name, Gpl_type type,
 // Declares a variable. Default value left up to the Symbol class
 std::shared_ptr<Symbol> InsertSymbol(std::string name, Gpl_type type)
 {
+	TRACE_VERBOSE("InsertSymbol('" << name << "', " << gpl_type_to_string(type) << ")")
+
 	std::shared_ptr<Symbol> pSymbol(new Symbol(name, type));
 	bool result = Symbol_table::instance()->insert_symbol(pSymbol);
 	if(!result)
@@ -107,8 +119,8 @@ inline std::shared_ptr<Symbol> get_symbol(std::string name, bool* bIsArray)
 
 #define GPL_END_EXPR_BLOCK(ret_param)\
 	} catch(const gpl_exception& ex) { \
-		error_handler.error(ex.get_error(), ex.get_argument(0), ex.get_argument(1), ex.get_argument(2)); \
-		std::shared_ptr<IValue> pval(new ConstantValue(0));\
+		ex.write_exception();\
+		std::shared_ptr<IValue> pval(new GPLVariant(0));\
 		ret_param = new ValueExpression(pval);\
 	} catch (const std::exception& ex) { \
 		TRACE_ERROR("std::exception in '" << __gpl_block_name << "': "  << ex.what()) \
@@ -376,14 +388,24 @@ variable_declaration:
 		std::string var_name(*$2);
 		delete $2;
 
+		TRACE_VERBOSE("Checking to see if the variable is already declared...")
+		bool bIsArray;
+		if(is_symbol_defined(var_name, &bIsArray))
+		{
+			throw previously_declared_variable(var_name);
+		}
+
 		TRACE_VERBOSE("Attempting to declare variable '" << var_name << "' of type '" << $1 << "'")
 		if($3 != NULL)
 		{
 			TRACE_VERBOSE("Optional Initializer Found...")
 			std::shared_ptr<IExpression> init_expr((IExpression*)$3);		
-			std::shared_ptr<IValue> init_val = init_expr->eval();
 
+			TRACE_VERBOSE("Evaluating the Intializer Expression...")
+			std::shared_ptr<IValue> init_val = init_expr->eval();
 			Gpl_type init_type = init_val->get_type();
+
+			TRACE_VERBOSE("Checking the Initial Value (Type: " + gpl_type_to_string(init_type) + ")...")
 			bool bBadInitialValue = false;
 			switch($1)
 			{
@@ -393,7 +415,7 @@ variable_declaration:
 						TRACE_ERROR("Mismatched Types. Defaulting to 0")
 						bad_initial_value(var_name).write_exception();
 						bBadInitialValue = true;
-						init_val.reset(new ConstantValue(0));
+						init_val.reset(new GPLVariant(0));
 					}
 					break;
 
@@ -403,7 +425,7 @@ variable_declaration:
 						TRACE_ERROR("Mismatched Types. Defaulting to 0.0")
 						bad_initial_value(var_name).write_exception();
 						bBadInitialValue = true;
-						init_val.reset(new ConstantValue(0.0));
+						init_val.reset(new GPLVariant(0.0));
 					}
 					break;
 
@@ -413,15 +435,16 @@ variable_declaration:
 						TRACE_ERROR("Mismatched Types. Defaulting to \"\"")
 						bad_initial_value(var_name).write_exception();
 						bBadInitialValue = true;
-						init_val.reset(new ConstantValue(""));
+						init_val.reset(new GPLVariant(""));
 					}
 					break;
 
 				default:
+					TRACE_ERROR("Unhandled Type!");
 					throw std::logic_error("Unhandled type: " + gpl_type_to_string(init_type));
 			}
 
-			TRACE_VERBOSE("Registering Symbol: " << var_name << " = " << init_val->get_string())
+			TRACE_VERBOSE("Inserting the Symbol...")
 			InsertSymbol(var_name, $1, init_val);
 		}
 		else
@@ -447,35 +470,36 @@ variable_declaration:
 			//error_handler.error(Error::PREVIOUSLY_DECLARED_VARIABLE, *$2);
 			throw previously_declared_variable(var_name);
 		}
-		else
+		
+		TRACE_VERBOSE("Checking to see if the Index is of the appropriate type...")
+		std::shared_ptr<IExpression> ndx_expr($4);
+		std::shared_ptr<IValue> ndx_val = ndx_expr->eval();
+
+		int array_size;
+		if(ndx_val->get_int(array_size) == CONVERSION_ERROR)
 		{
-			TRACE_VERBOSE("Checking to see if the Index is of the appropriate type...")
-			std::shared_ptr<IExpression> ndx_expr($4);
-			std::shared_ptr<IValue> ndx_val = ndx_expr->eval();
-			if(ndx_val->get_type() != INT)
-			{
-				throw invalid_array_size(var_name, ndx_val->get_string());
-			}
-
-			int array_size = ndx_val->get_int();
-			if(array_size <= 0)
-			{
-				throw invalid_array_size(var_name, ndx_val->get_string());
-			}
-
-			TRACE_VERBOSE("Creating the set of variables")
-			for(int i = 0; i < array_size; i++)
-			{
-				std::string name = var_name + "[";
-				name += std::to_string(i) + "]";
-
-				std::shared_ptr<IValue> init_val(new ConstantValue(0));
-				InsertSymbol(name, $1, init_val);
-			}
+			std::string str_val;
+			ndx_val->get_string(str_val);
+			throw invalid_array_size(var_name,str_val);
+		}			
+		else if(array_size <= 0)
+		{
+			throw invalid_array_size(var_name, std::to_string(array_size));
 		}
+
+		TRACE_VERBOSE("Creating the set of variables")
+		for(int i = 0; i < array_size; i++)
+		{
+			std::string name = var_name + "[";
+			name += std::to_string(i) + "]";
+
+			std::shared_ptr<IValue> init_val(new GPLVariant(0));
+			InsertSymbol(name, $1, init_val);
+		}
+		
 		GPL_END_DECL_BLOCK()
 	}
-    ;
+   ;
 
 //---------------------------------------------------------------------
 simple_type:
@@ -555,25 +579,36 @@ object_declaration:
 				switch(pval->get_type())
 				{
 					case INT:
-						result = pobj->set_member_variable(pcur->get_name(), pval->get_int());
+					{
+						int temp;
+						pval->get_int(temp);
+						result = pobj->set_member_variable(pcur->get_name(),temp);
 						break;
+					}
 
 					case DOUBLE:
-						result = pobj->set_member_variable(pcur->get_name(), pval->get_double());
+					{
+						double temp;
+						pval->get_double(temp);
+						result = pobj->set_member_variable(pcur->get_name(), temp);
 						break;						
+					}
 
 					case STRING:
-						result = pobj->set_member_variable(pcur->get_name(), pval->get_string());
+					{
+						std::string temp;
+						pval->get_string(temp);
+						result = pobj->set_member_variable(pcur->get_name(), temp);
 						break;	
-
-					/*case GAME_OBJECT:
-						result = pobj->set_member_variable(pcur->get_name(), pval->get_game_object());
-						break;*/
+					}
 
 					case ANIMATION_BLOCK:
-						result = pobj->set_member_variable(pcur->get_name(), 
-								pval->get_animation_block());
+					{
+						std::shared_ptr<Animation_block> temp;
+						pval->get_animation_block(temp);
+						result = pobj->set_member_variable(pcur->get_name(), temp);
 						break;
+					}
 
 					default:
 						result = MEMBER_NOT_OF_GIVEN_TYPE;
@@ -595,7 +630,7 @@ object_declaration:
 
 		// Register the Symbol
 		TRACE_VERBOSE("Creating the Value... ")
-		std::shared_ptr<IValue> pval(new ConstantValue(pobj));
+		std::shared_ptr<IValue> pval(new GPLVariant(pobj));
 
 		TRACE_VERBOSE("Registering the Symbol...")
 		InsertSymbol(var_name, GAME_OBJECT, pval);
@@ -865,7 +900,7 @@ variable:
 		}
 		else
 		{
-			std::shared_ptr<IValue> pVal(new ReferenceValue(pSymbol));
+			std::shared_ptr<IValue> pVal(new Reference(pSymbol));
 			$$ = new ValueExpression(pVal);
 		}
 		GPL_END_EXPR_BLOCK($$)
@@ -1030,7 +1065,7 @@ expression:
     | T_MINUS  expression %prec UNARY_OPS
 	{
 		GPL_BEGIN_EXPR_BLOCK("expression[12]")
-		std::shared_ptr<IValue> pVal(new ConstantValue(-1));
+		std::shared_ptr<IValue> pVal(new GPLVariant(-1));
 		std::shared_ptr<IExpression> pLHS(new ValueExpression(pVal));
 		std::shared_ptr<IExpression> pRHS($2);
 		$$ = new MultiplyExpression(pLHS, pRHS);
@@ -1122,40 +1157,36 @@ primary_expression:
     | T_INT_CONSTANT
 	{
 		GPL_BEGIN_EXPR_BLOCK("primary_expression[2]")
-		std::shared_ptr<IValue> pval(new ConstantValue($1));
+		std::shared_ptr<IValue> pval(new GPLVariant($1));
 		$$ = new ValueExpression(pval);
-		TRACE_VERBOSE("pval->get_int(): " << pval->get_int());
-		TRACE_VERBOSE("eval()->get_int(): " << $$->eval()->get_int());
 		GPL_END_EXPR_BLOCK($$)
 	}
     | T_TRUE
 	{
 		GPL_BEGIN_EXPR_BLOCK("primary_expression[3]")
-		std::shared_ptr<IValue> pval(new ConstantValue(1));
+		std::shared_ptr<IValue> pval(new GPLVariant(1));
 		$$ = new ValueExpression(pval);
 		GPL_END_EXPR_BLOCK($$)
 	}
     | T_FALSE
 	{
 		GPL_BEGIN_EXPR_BLOCK("primary_expression[4]")
-		std::shared_ptr<IValue> pval(new ConstantValue(0));
+		std::shared_ptr<IValue> pval(new GPLVariant(0));
 		$$ = new ValueExpression(pval);
 		GPL_END_EXPR_BLOCK($$)
 	}
     | T_DOUBLE_CONSTANT
 	{
 		GPL_BEGIN_EXPR_BLOCK("primary_expression[5]")
-		std::shared_ptr<IValue> pval(new ConstantValue((double)$1));
+		std::shared_ptr<IValue> pval(new GPLVariant((double)$1));
 		$$ = new ValueExpression(pval);
-
-		TRACE_VERBOSE("pval type: " << gpl_type_to_string(pval->get_type()))
-		TRACE_VERBOSE("pval->get_double(): " << pval->get_double())
+		TRACE_VERBOSE("DOUBLE: " << $1)
 		GPL_END_EXPR_BLOCK($$)
 	}
     | T_STRING_CONSTANT
 	{
 		GPL_BEGIN_EXPR_BLOCK("primary_expresion[6]")
-		std::shared_ptr<IValue> pval(new ConstantValue(*$1));
+		std::shared_ptr<IValue> pval(new GPLVariant(*$1));
 		delete $1;
 		$$ = new ValueExpression(pval);
 		GPL_END_EXPR_BLOCK($$)

@@ -99,19 +99,22 @@ std::shared_ptr<IValue> ArrayReferenceExpression::eval() const
 	std::shared_ptr<IExpression> ndx_expr = get_child(0);
 	const std::shared_ptr<IValue>& ndx_val = ndx_expr->eval();
 
+	int ndx;
+	ndx_val->get_int(ndx);
+
 	std::string reference = _arrayName + "[";
-	reference += std::to_string(ndx_val->get_int()) + "]";
+	reference += std::to_string(ndx) + "]";
 					
 	std::shared_ptr<Symbol> pSymbol = 
 			Symbol_table::instance()->find_symbol(reference);
 
 	if(!pSymbol)
 	{
-		throw index_out_of_bounds(_arrayName, ndx_val->get_int());
+		throw index_out_of_bounds(_arrayName, ndx);
 	}
 
-	TRACE_VERBOSE("ArrayReferenceExpression::eval() - Symbol found. Returning ReferenceValue")
-	std::shared_ptr<IValue> ret(new ReferenceValue(pSymbol));
+	TRACE_VERBOSE("ArrayReferenceExpression::eval() - Symbol found. Returning Reference")
+	std::shared_ptr<IValue> ret(new Reference(pSymbol));
 	return ret;
 }
 
@@ -170,20 +173,32 @@ std::shared_ptr<IValue> AddExpression::eval() const
 	{
 		case INT:
 		{
-			int result = val1->get_int() + val2->get_int();
-			ret.reset(new ConstantValue(result));
+			int num1, num2;
+			val1->get_int(num1);
+			val2->get_int(num2);
+
+			int result = num1 + num2;
+			ret.reset(new GPLVariant(result, true));
 			break;
 		}
 		case DOUBLE:
 		{
-			double result = val1->get_double() + val2->get_double();
-			ret.reset(new ConstantValue(result));
+			double num1, num2;
+			val1->get_double(num1);
+			val2->get_double(num2);
+
+			double result = num1 + num2;
+			ret.reset(new GPLVariant(result, true));
 			break;
 		}
 		case STRING:
 		{
-			std::string result = val1->get_string() + val2->get_string();
-			ret.reset(new ConstantValue(result));
+			std::string str1, str2;
+			val1->get_string(str1);
+			val2->get_string(str2);
+
+			std::string result = str1 + str2;
+			ret.reset(new GPLVariant(result, true));
 			break;
 		}
 		default:
@@ -241,17 +256,23 @@ std::shared_ptr<IValue> MinusExpression::eval() const
 	//TRACE_VERBOSE("MINUS Type: " << gpl_type_to_string(_type))
 	if(_type == INT)
 	{
-		int result = pval1->get_int() - pval2->get_int();
-		pret.reset(new ConstantValue(result));
+		int num1, num2;
+		pval1->get_int(num1);
+		pval2->get_int(num2);
+		
+		int result = num1 - num2;
+		pret.reset(new GPLVariant(result, true));
 	}
 	else // DOUBLE
 	{
-		double result = pval1->get_double() - pval2->get_double();
-		pret.reset(new ConstantValue(result));
+		double num1, num2;
+		pval1->get_double(num1);
+		pval2->get_double(num2);
+
+		double result = num1 + num2;
+		pret.reset(new GPLVariant(result, true));
 	}
 	
-	//TRACE_VERBOSE("MINUS(" << pval1->get_string() << ", " << pval2->get_string()
-	//		<< "): " << pret->get_string())
 	return pret;
 }
 
@@ -298,13 +319,23 @@ std::shared_ptr<IValue> MultiplyExpression::eval() const
 
 	if(_type == INT)
 	{
-		int result = pval1->get_int() * pval2->get_int();
-		pret.reset(new ConstantValue(result));
+		int num1, num2;
+		pval1->get_int(num1);
+		pval2->get_int(num2);
+
+		int result = num1 * num2;
+		pret.reset(new GPLVariant(result, true));
+		TRACE_VERBOSE("MULTIPLY(" << num1 << ", " << num2 << ") = " << result)
 	}
 	else
 	{
-		double result = pval1->get_double() * pval2->get_double();
-		pret.reset(new ConstantValue(result));
+		double num1, num2;
+		pval1->get_double(num1);
+		pval2->get_double(num2);
+
+		double result = num1 * num2;
+		pret.reset(new GPLVariant(result, true));
+		TRACE_VERBOSE("MULTIPLY(" << num1 << ", " << num2 << ") = " << result)
 	}
 
 	return pret;
@@ -352,22 +383,35 @@ std::shared_ptr<IValue> DivideExpression::eval() const
 	std::shared_ptr<IValue> pval2 = get_child(1)->eval();
 	std::shared_ptr<IValue> pret = nullptr;
 
-	if(pval2->get_double() == 0)
+	//check for division by zero...
+	double div;
+	pval2->get_double(div);
+
+	if(div == 0)
 	{
 		// On Divide By Zero - just return zero
 		Error::error(Error::DIVIDE_BY_ZERO_AT_PARSE_TIME);
-		if(_type == INT) pret.reset(new ConstantValue(0));
-		else pret.reset(new ConstantValue(0.0));	
+
+		if(_type == INT) { pret.reset(new GPLVariant(0, true)); }
+		else { pret.reset(new GPLVariant(0.0, true)); }
 	}
 	else if(_type == INT)
 	{
-		int result = pval1->get_int() / pval2->get_int();
-		pret.reset(new ConstantValue(result));
+		int num1, num2;
+		pval1->get_int(num1);
+		pval2->get_int(num2);
+
+		int result = num1 / num2;
+		pret.reset(new GPLVariant(result, true));
 	}
 	else
 	{
-		double result = pval1->get_double() / pval2->get_double();
-		pret.reset(new ConstantValue(result));
+		double num1, num2;
+		pval1->get_double(num1);
+		pval2->get_double(num2);
+
+		double result = num1 / num2;
+		pret.reset(new GPLVariant(result, true));
 	}	
 
 	return pret;
@@ -403,15 +447,19 @@ std::shared_ptr<IValue> ModExpression::eval() const
 	std::shared_ptr<IValue> pval1 = get_child(0)->eval();
 	std::shared_ptr<IValue> pval2 = get_child(1)->eval();
 	std::shared_ptr<IValue> pret = nullptr;
+
+	int num, div;
+	pval1->get_int(num);
+	pval2->get_int(div);
 	
-	if(pval2->get_int() == 0)
+	if(div == 0)
 	{
 		Error::error(Error::MOD_BY_ZERO_AT_PARSE_TIME);
-		pret.reset(new ConstantValue(0));
+		pret.reset(new GPLVariant(0, true));
 	}
 	else
-	{
-		pret.reset(new ConstantValue(pval1->get_int() % pval2->get_int()));
+	{	
+		pret.reset(new GPLVariant(num % div, true));
 	}
 
 	return pret;
@@ -443,10 +491,12 @@ std::shared_ptr<IValue> SinExpression::eval() const
 	std::shared_ptr<IValue> pval1 = get_child(0)->eval();
 	std::shared_ptr<IValue> pret = nullptr;
 
-	double rads = CONVERT_TO_RADIANS(pval1->get_double());
-	double result = sin(rads);
-	pret.reset(new ConstantValue(result));
+	double result;
+	pval1->get_double(result);
+	result = CONVERT_TO_RADIANS(result);
+	result = sin(result);
 
+	pret.reset(new GPLVariant(result, true));
 	return pret;
 }
 
@@ -469,10 +519,12 @@ std::shared_ptr<IValue> CosExpression::eval() const
 {
 	std::shared_ptr<IValue> pval = get_child(0)->eval();
 	
-	double result = CONVERT_TO_RADIANS(pval->get_double());
+	double result;
+	pval->get_double(result);
+	result = CONVERT_TO_RADIANS(result);
 	result = cos(result);
 
-	std::shared_ptr<IValue>pret(new ConstantValue(result));
+	std::shared_ptr<IValue>pret(new GPLVariant(result, true));
 	return pret;
 }
 
@@ -495,9 +547,13 @@ TanExpression::~TanExpression()
 std::shared_ptr<IValue> TanExpression::eval() const
 {
 	std::shared_ptr<IValue> pval = get_child(0)->eval();
-	double result = CONVERT_TO_RADIANS(pval->get_double());
+	
+	double result;
+	pval->get_double(result);
+	result = CONVERT_TO_RADIANS(result);
 	result = tan(result);
-	return std::shared_ptr<IValue>(new ConstantValue(result));
+
+	return std::shared_ptr<IValue>(new GPLVariant(result, true));
 }
 
 AsinExpression::AsinExpression(std::shared_ptr<IExpression> pArg)
@@ -518,10 +574,12 @@ AsinExpression::~AsinExpression()
 std::shared_ptr<IValue> AsinExpression::eval() const
 {
 	std::shared_ptr<IValue> pval = get_child(0)->eval();
-	double result = pval->get_double();
+
+	double result;
+	pval->get_double(result);
 	result = asin(result);
 	result = CONVERT_TO_DEGREES(result);
-	return std::shared_ptr<IValue>(new ConstantValue(result));
+	return std::shared_ptr<IValue>(new GPLVariant(result, true));
 }
 
 AcosExpression::AcosExpression(std::shared_ptr<IExpression> pArg)
@@ -542,10 +600,13 @@ AcosExpression::~AcosExpression()
 std::shared_ptr<IValue> AcosExpression::eval() const
 {
 	std::shared_ptr<IValue> pval = get_child(0)->eval();
-	double result = pval->get_double();
+
+	double result;
+	pval->get_double(result);
 	result = acos(result);
 	result = CONVERT_TO_DEGREES(result);
-	return std::shared_ptr<IValue>(new ConstantValue(result));
+
+	return std::shared_ptr<IValue>(new GPLVariant(result, true));
 }
 
 AtanExpression::AtanExpression(std::shared_ptr<IExpression> pArg)
@@ -566,10 +627,13 @@ AtanExpression::~AtanExpression()
 std::shared_ptr<IValue> AtanExpression::eval() const
 {
 	std::shared_ptr<IValue> pval = get_child(0)->eval();
-	double result = pval->get_double();
+
+	double result;
+	pval->get_double(result);
 	result = atan(result);
 	result = CONVERT_TO_DEGREES(result);
-	return std::shared_ptr<IValue>(new ConstantValue(result));
+
+	return std::shared_ptr<IValue>(new GPLVariant(result, true));
 }
 
 SqrtExpression::SqrtExpression(std::shared_ptr<IExpression> pArg)
@@ -590,10 +654,12 @@ SqrtExpression::~SqrtExpression()
 std::shared_ptr<IValue> SqrtExpression::eval() const
 {
 	std::shared_ptr<IValue> pval = get_child(0)->eval();
-	double result = sqrt(pval->get_double());
 
-	TRACE_VERBOSE("SQRT(" << pval->get_double() << "): " << result);
-	return std::shared_ptr<IValue>(new ConstantValue(result));
+	double result;
+	pval->get_double(result);
+	result = sqrt(result);
+
+	return std::shared_ptr<IValue>(new GPLVariant(result, true));
 }
 
 
@@ -615,8 +681,12 @@ FloorExpression::~FloorExpression()
 std::shared_ptr<IValue> FloorExpression::eval() const
 {
 	std::shared_ptr<IValue> pval = get_child(0)->eval();
-	int result = floor(pval->get_double());
-	return std::shared_ptr<IValue>(new ConstantValue(result));
+
+	double orig;
+	pval->get_double(orig);
+	int result = floor(orig);
+
+	return std::shared_ptr<IValue>(new GPLVariant(result, true));
 }
 
 
@@ -643,19 +713,21 @@ std::shared_ptr<IValue> AbsoluteExpression::eval() const
 
 	if(_type == INT)
 	{
-		int result= pval->get_int();
-		result = std::abs(result);
+		int orig;
+		pval->get_int(orig);
+		int result = std::abs(orig);
 
-		TRACE_VERBOSE("ABS(" << pval->get_int() << ") = " << result);
-		pret.reset(new ConstantValue(result));
+		TRACE_VERBOSE("ABS(" << orig << ") = " << result);
+		pret.reset(new GPLVariant(result, true));
 	}
 	else // DOUBLE
 	{
-		double result = pval->get_double();
-		result = std::abs(result);
+		double orig;
+		pval->get_double(orig);
+		double result = std::abs(orig);
 
-		TRACE_VERBOSE("ABS(" << pval->get_double() << ") = " << result);
-		pret.reset(new ConstantValue(result));
+		TRACE_VERBOSE("ABS(" << orig << ") = " << result);
+		pret.reset(new GPLVariant(result, true));
 	}
 	return pret;
 }
@@ -685,11 +757,14 @@ std::shared_ptr<IValue> RandomExpression::eval() const
 
 	std::shared_ptr<IValue> pval = get_child(0)->eval();
 
-	int result = abs(floor(pval->get_double()));
+	double orig;
+	pval->get_double(orig);
+
+	int result = abs(floor(orig));
 	std::uniform_int_distribution<int> distribution(0, result? result - 1 : 0);
 	result = distribution(generator);
 
-	return std::shared_ptr<IValue>(new ConstantValue(result));
+	return std::shared_ptr<IValue>(new GPLVariant(result, true));
 }
 
 
@@ -720,22 +795,24 @@ std::shared_ptr<IValue> EqualExpression::eval() const
 	Gpl_type t2 = pval2->get_type();
 	if((t1 | t2) & STRING)
 	{
-		std::string str1 = pval1->get_string();
-		std::string str2 = pval2->get_string();
+		std::string str1, str2;
+		pval1->get_string(str1);
+		pval2->get_string(str2);
 		result = (str1 == str2);
 
 		TRACE_VERBOSE("EQUAL('" << str1 << "', '" << str2 << "') = " << result)
 	}
 	else
 	{
-		double dbl1 = pval1->get_double();
-		double dbl2 = pval2->get_double();
+		double dbl1, dbl2;
+		pval1->get_double(dbl1);
+		dbl2 = pval2->get_double(dbl2);
 		result = (dbl1 == dbl2);
 
 		TRACE_VERBOSE("EQUAL(" << dbl1 << ", " << dbl2 << ") = " << result)
 	}
 	
-	pret.reset(new ConstantValue(result));
+	pret.reset(new GPLVariant(result, true));
 	return pret;
 }
 
@@ -767,18 +844,20 @@ std::shared_ptr<IValue> NotEqualExpression::eval() const
 	Gpl_type t2 = pval2->get_type();
 	if((t1 | t2) & STRING)
 	{
-		std::string str1 = pval1->get_string();
-		std::string str2 = pval2->get_string();
+		std::string str1, str2;
+		pval1->get_string(str1);
+		pval2->get_string(str2);
 		result = (str1 != str2);
 	}
 	else
 	{
-		double dbl1 = pval1->get_double();
-		double dbl2 = pval2->get_double();
+		double dbl1, dbl2;
+		pval1->get_double(dbl1);
+		pval2->get_double(dbl2);
 		result = (dbl1 != dbl2);
 	}
 	
-	pret.reset(new ConstantValue(result));
+	pret.reset(new GPLVariant(result, true));
 	return pret;
 }
 
@@ -810,18 +889,20 @@ std::shared_ptr<IValue> LessThanExpression::eval() const
 	Gpl_type t2 = pval2->get_type();
 	if((t1 | t2) & STRING)
 	{
-		std::string str1 = pval1->get_string();
-		std::string str2 = pval2->get_string();
+		std::string str1, str2;
+		pval1->get_string(str1);
+		pval2->get_string(str2);
 		result = (str1 < str2);
 	}
 	else
 	{
-		double dbl1 = pval1->get_double();
-		double dbl2 = pval2->get_double();
+		double dbl1, dbl2;
+		pval1->get_double(dbl1);
+		pval2->get_double(dbl2);
 		result = (dbl1 < dbl2);
 	}
 	
-	pret.reset(new ConstantValue(result));
+	pret.reset(new GPLVariant(result, true));
 	return pret;
 }
 
@@ -853,18 +934,20 @@ std::shared_ptr<IValue> LessThanEqualExpression::eval() const
 	Gpl_type t2 = pval2->get_type();
 	if((t1 | t2) & STRING)
 	{
-		std::string str1 = pval1->get_string();
-		std::string str2 = pval2->get_string();
+		std::string str1, str2;
+		pval1->get_string(str1);
+		pval2->get_string(str2);
 		result = (str1 <= str2);
 	}
 	else
 	{
-		double dbl1 = pval1->get_double();
-		double dbl2 = pval2->get_double();
+		double dbl1, dbl2;
+		pval1->get_double(dbl1);
+		pval2->get_double(dbl2);
 		result = (dbl1 <= dbl2);
 	}
 	
-	pret.reset(new ConstantValue(result));
+	pret.reset(new GPLVariant(result, true));
 	return pret;
 }
 
@@ -896,18 +979,20 @@ std::shared_ptr<IValue> GreaterThanExpression::eval() const
 	Gpl_type t2 = pval2->get_type();
 	if((t1 | t2) & STRING)
 	{
-		std::string str1 = pval1->get_string();
-		std::string str2 = pval2->get_string();
+		std::string str1, str2;
+		pval1->get_string(str1);
+		pval2->get_string(str2);
 		result = (str1 > str2);
 	}
 	else
 	{
-		double dbl1 = pval1->get_double();
-		double dbl2 = pval2->get_double();
+		double dbl1, dbl2;
+		pval1->get_double(dbl1);
+		pval2->get_double(dbl2);
 		result = (dbl1 > dbl2);
 	}
 	
-	pret.reset(new ConstantValue(result));
+	pret.reset(new GPLVariant(result, true));
 	return pret;
 }
 
@@ -939,18 +1024,20 @@ std::shared_ptr<IValue> GreaterThanEqualExpression::eval() const
 	Gpl_type t2 = pval2->get_type();
 	if((t1 | t2) & STRING)
 	{
-		std::string str1 = pval1->get_string();
-		std::string str2 = pval2->get_string();
+		std::string str1, str2;
+		pval1->get_string(str1);
+		pval2->get_string(str2);
 		result = (str1 >= str2);
 	}
 	else
 	{
-		double dbl1 = pval1->get_double();
-		double dbl2 = pval2->get_double();
+		double dbl1, dbl2;
+		pval1->get_double(dbl1);
+		pval2->get_double(dbl2);
 		result = (dbl1 >= dbl2);
 	}
 	
-	pret.reset(new ConstantValue(result));
+	pret.reset(new GPLVariant(result, true));
 	return pret;
 }
 
@@ -975,11 +1062,12 @@ std::shared_ptr<IValue> AndExpression::eval() const
 	std::shared_ptr<IValue> pval1 = get_child(0)->eval();
 	std::shared_ptr<IValue> pval2 = get_child(1)->eval();
 
-	double dbl1 = pval1->get_double();
-	double dbl2 = pval2->get_double();
+	double dbl1, dbl2;
+	pval1->get_double(dbl1);
+	pval2->get_double(dbl2);
 	int result = (dbl1 && dbl2);
 		
-	std::shared_ptr<IValue> pret(new ConstantValue(result));
+	std::shared_ptr<IValue> pret(new GPLVariant(result, true));
 	return pret;
 }
 
@@ -1004,11 +1092,12 @@ std::shared_ptr<IValue> OrExpression::eval() const
 	std::shared_ptr<IValue> pval1 = get_child(0)->eval();
 	std::shared_ptr<IValue> pval2 = get_child(1)->eval();
 
-	double dbl1 = pval1->get_double();
-	double dbl2 = pval2->get_double();
+	double dbl1, dbl2;
+	pval1->get_double(dbl1);
+	pval2->get_double(dbl2);
 	int result = (dbl1 || dbl2);
 		
-	std::shared_ptr<IValue> pret(new ConstantValue(result));
+	std::shared_ptr<IValue> pret(new GPLVariant(result, true));
 	return pret;
 }
 
@@ -1028,10 +1117,11 @@ std::shared_ptr<IValue> NotExpression::eval() const
 {
 	std::shared_ptr<IValue> pval1 = get_child(0)->eval();
 	
-	double dbl1 = pval1->get_double();
+	double dbl1;
+	pval1->get_double(dbl1);
 	int result = !dbl1;
 		
-	std::shared_ptr<IValue> pret(new ConstantValue(result));
+	std::shared_ptr<IValue> pret(new GPLVariant(result, true));
 	return pret;
 }
 

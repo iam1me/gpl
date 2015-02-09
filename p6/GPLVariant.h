@@ -5,36 +5,43 @@
 #include <typeinfo>
 #include <memory>
 #include "gpl_type.h"
+#include "value.h"
 
 class Game_object;
 class Animation_block;
 
 // GPLVariant is a union-like class that encapsulates the logic
 // for safely setting, accessing, and releasing the value for a
-// GPL variable. Used by the Symbol class.
-class GPLVariant
+// GPL variable. Serves as the base class for ConstantValue and
+// VariableValue respectively.
+class GPLVariant : public IValue
 {
 public:
-	template<class T>
-	GPLVariant(const T& val);
-
-	//template<class T>
-	//GPLVariant(const std::shared_ptr<T>& val);
-
+	GPLVariant(int val, bool bConstant = true);
+	GPLVariant(double val, bool bConstant = true);
+	GPLVariant(const std::string& val, bool bConstant = true);
+	GPLVariant(const std::shared_ptr<Game_object>& val, bool bConstant = true);
+	GPLVariant(const std::shared_ptr<Animation_block>& val, bool bConstant = true);
+	GPLVariant(Gpl_type type, const std::shared_ptr<IValue>& pval, bool bConstant = true);
+	GPLVariant(Gpl_type type, bool bConstant = true); //not initialized
 	~GPLVariant();
 
-	Gpl_type get_type() const;
-	//void set_type(const Gpl_type& type);
+	virtual ConversionStatus get_int(int&) const;
+	virtual ConversionStatus get_double(double&) const;
+	virtual ConversionStatus get_string(std::string&) const;
+	virtual ConversionStatus get_game_object(std::shared_ptr<Game_object>&) const;
+	virtual ConversionStatus get_animation_block(std::shared_ptr<Animation_block>&) const;
 
-	template<class T>
-	const T& get_value() const;
+	virtual ConversionStatus set_int(const int&);
+	virtual ConversionStatus set_double(const double&);
+	virtual ConversionStatus set_string(const std::string&);
+	virtual ConversionStatus set_game_object(const std::shared_ptr<Game_object>&);
+	virtual ConversionStatus set_animation_block(const std::shared_ptr<Animation_block>&);	
 
-	template<class T>
-	void set_value(const T&);
-
-	std::string to_string() const;
+	bool is_initialized() const;
 
 private:
+	bool _binit; 
 	Gpl_type _type;
 
 	union{
@@ -45,44 +52,5 @@ private:
 		std::shared_ptr<Animation_block>* _val_panim;
 	};
 };
-
-template<class T>
-GPLVariant::GPLVariant(const T& val)
-{
-	std::string err = "GPLVariant::GPLVariant - Type (";
-	err += typeid(T).name();
-	err += ") Not Supported";
-	
-	throw std::runtime_error(err);
-}
-
-/*template<class T>
-GPLVariant::GPLVariant(const std::shared_ptr<T>& pval)
-{
-	std::string err = "GPLVariant::GPLVariant - Type(";
-	err += typeid(T).name();
-	err += ") Not Supported";
-	throw std::runtime_error(err);
-}*/
-
-template<class T>
-const T& GPLVariant::get_value() const
-{
-	std::string err = "GPLVariant::get_value - Type (";
-	err += typeid(T).name();
-	err += ") Not Supported";
-
-	throw std::runtime_error(err);
-}
-
-template<class T>
-void GPLVariant::set_value(const T&)
-{
-	std::string err = "GPLVariant::set_value - Type (";
-	err += typeid(T).name();
-	err += ") Not Supported";
-
-	throw std::runtime_error("GPLVariant::set_value - Type Not Recognized");
-}
 
 #endif

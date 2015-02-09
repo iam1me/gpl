@@ -1,49 +1,59 @@
+#include <iostream>
+#include <string>
+
 #include "symbol.h"
+#include "symbol_table.h"
+#include "gpl_type.h"
 #include "value.h"
 #include "parser.h"
 
+Symbol::Symbol(const std::string& name, const int& val)
+	: GPLVariant(val, false)
+{
+	_name = name;
+}
+
+Symbol::Symbol(const std::string& name, const double& val)
+	: GPLVariant(val, false)
+{
+	_name = name;
+}
+
+Symbol::Symbol(const std::string& name, const std::string& val)
+	: GPLVariant(val, false)
+{
+	TRACE_VERBOSE("Symbol::Symbol('" << name << "', '" << val << "')")
+	_name = name;
+}
+
+Symbol::Symbol(const std::string& name, const std::shared_ptr<Game_object>& val)
+	: GPLVariant(val, false)
+{
+	_name = name;
+}
+
+Symbol::Symbol(const std::string& name, const std::shared_ptr<Animation_block>& val)
+	: GPLVariant(val, false)
+{
+	_name = name;
+}
+
+Symbol::Symbol(const std::string& name, const Gpl_type& type)
+	: GPLVariant(type, false)
+{
+	_name = name;
+}
+
+Symbol::Symbol(const std::string& name, const Gpl_type& type, const std::shared_ptr<IValue>& pval)
+	: GPLVariant(type, pval,  false)
+{
+	TRACE_VERBOSE("Symbol::Symbol(" << name << ", " << gpl_type_to_string(type) 
+				<< ", " << pval->to_string() << ")");
+	_name = name;
+}
+
 Symbol::~Symbol()
 {
-}
-
-Symbol::Symbol(const std::string& name, Gpl_type type)
-{
-	_name = name;
-
-	switch(type)
-	{
-		case INT:
-			_pval.reset(new VariableValue(0));
-			_bInitialized = false;
-			break;
-		case DOUBLE:
-			_pval.reset(new VariableValue(.0));
-			_bInitialized = false;
-			break;
-		case STRING:
-			_pval.reset(new VariableValue(""));
-			_bInitialized = false;
-			break;
-		default:
-			throw std::invalid_argument("Symbol::Symbol - Invalid Type: " + gpl_type_to_string(type));
-	}
-	_type = type;
-}
-
-Symbol::Symbol(const std::string& name, Gpl_type type, std::shared_ptr<IValue> val)
-{
-	if(!val)
-	{
-		throw std::invalid_argument("Symbol::Symbol - val is NULL");
-	}
-
-	_name = name;
-	_type = type;
-	_pval = val;
-
-	TRACE_VERBOSE("Constructed Symbol '" << name.c_str()
-			<< "' (" << gpl_type_to_string(_type) << "): "
-			<< val->get_string())
 }
 
 const std::string& Symbol::get_name() const
@@ -51,71 +61,91 @@ const std::string& Symbol::get_name() const
 	return _name;
 }
 
-Gpl_type Symbol::get_type() const
+std::ostream& Symbol::print(std::ostream& os) const
 {
-	return _type;
-}
+	Gpl_type type = get_type();
+	os << gpl_type_to_string(type);
+	os << " " + _name;
 
-std::string Symbol::to_string() const
-{
-	std::string ret = gpl_type_to_string(_type);
-	ret += " " + _name;
-
-	if(_type == STRING)
+	if(type == STRING)
 	{
 		// Put quotes around string literals
-		ret += " \"" + _pval->get_string() + "\"";
+		os << " \"" + to_string() + "\"";
 	}
-	else if(_type & (GAME_OBJECT | ANIMATION_BLOCK))
+	else if(type & (GAME_OBJECT | ANIMATION_BLOCK))
 	{
-		ret += "\n";
+		os << std::endl;
 		indent++;
-		ret += _pval->get_string();
+		os << to_string();
 		indent--;
 	}
 	else
 	{
-		ret += " " + _pval->get_string();
+		os << " " + to_string();
 	}
 
-	return ret;
+	os << std::endl;
+	return os;
 }
 
-const std::shared_ptr<IValue>& Symbol::get_value()
+
+Reference::Reference(std::shared_ptr<Symbol> pSymbol)
+	: IValue(pSymbol->get_type(), pSymbol->is_constant())
 {
-	return _pval;
+	if(!pSymbol) throw std::invalid_argument("ReferenceValue::ReferenceValue() - pSymbol is NULL");
+	_pSymbol = pSymbol;
 }
 
+Reference::~Reference()
+{}	
 
-void Symbol::set_value(const std::shared_ptr<IValue>& val)
+ConversionStatus Reference::get_int(int& val) const
 {
-	if(!val)
-	{
-		throw std::invalid_argument("Symbol::set_value - val is NULL");
-	}
-
-	if(_pval->is_constant())
-	{
-		throw std::logic_error("Symbol::set_value - the Symbol holds a constant value");
-	}
-
-	IVariable* pTemp = (IVariable*)_pval.get();
-	switch(_type)
-	{
-		case INT:
-			pTemp->set_value(val->get_int());
-			break;
-
-		case DOUBLE:
-			pTemp->set_value(val->get_double());
-			break;
-
-		case STRING:
-			pTemp->set_value(val->get_string());
-			break;
-
-		default:
-			throw std::logic_error("Symbol::set_value - Unsupported Type");		
-	}
-	_bInitialized = true;	
+	return _pSymbol->get_int(val);
 }
+
+ConversionStatus Reference::get_double(double& val) const
+{
+	return _pSymbol->get_double(val);
+}
+
+ConversionStatus Reference::get_string(std::string& val) const
+{
+	return _pSymbol->get_string(val);
+}
+
+ConversionStatus Reference::get_game_object(std::shared_ptr<Game_object>& val) const
+{
+	return _pSymbol->get_game_object(val);
+}
+
+ConversionStatus Reference::get_animation_block(std::shared_ptr<Animation_block>& val) const
+{
+	return _pSymbol->get_animation_block(val);
+}
+
+ConversionStatus Reference::set_int(const int& val)
+{
+	return _pSymbol->set_int(val);
+}
+
+ConversionStatus Reference::set_double(const double& val)
+{
+	return _pSymbol->set_double(val);
+}
+
+ConversionStatus Reference::set_string(const std::string& val)
+{
+	return _pSymbol->set_string(val);
+}
+
+ConversionStatus Reference::set_game_object(const std::shared_ptr<Game_object>& val)
+{
+	return _pSymbol->set_game_object(val);
+}
+
+ConversionStatus Reference::set_animation_block(const std::shared_ptr<Animation_block>& val)
+{
+	return _pSymbol->set_animation_block(val);
+}
+	

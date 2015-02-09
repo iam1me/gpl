@@ -12,55 +12,94 @@
 #include <stdexcept>
 #include <memory>
 
+#include "value.h"
 #include "GPLVariant.h"
-#include "gpl_assert.h"
 
-// Forward Declaration
-class IValue;
-
-
-class Symbol
+// Symbol = named GPLVariant
+class Symbol : public GPLVariant
 {
 public:
-	Symbol(const std::string& name, Gpl_type type); // Declares a symbol, but doesn't initialize it
-	Symbol(const std::string& name, Gpl_type type, std::shared_ptr<IValue> val); // Declares & initializes. val can't be null
+	Symbol(const std::string& name, const int& val);
+	Symbol(const std::string& name, const double& val);
+	Symbol(const std::string& name, const std::string& val);
+	Symbol(const std::string& name, const std::shared_ptr<Game_object>& val);
+	Symbol(const std::string& name, const std::shared_ptr<Animation_block>& val);
 
-	//template<class T>
-	//Symbol(const std::string& name, const T& val);
-	~Symbol();
+	Symbol(const std::string& name, const Gpl_type& type, const std::shared_ptr<IValue>& pval);
+	Symbol(const std::string& name, const Gpl_type& type); // uninitialized symbol
+	virtual ~Symbol();
 
 	const std::string& get_name() const;
-	Gpl_type get_type() const;
-	
-	//template<class T>
-	//const T& get_value() const;
 
-	const std::shared_ptr<IValue>& get_value();	
-	void set_value(const std::shared_ptr<IValue>& pval);
-
-	//std::shared_ptr<GPLVariant> get_variant();
-
-	std::string to_string() const;
+	virtual std::ostream& print(std::ostream& os) const;
 
 private:
 	std::string _name;
-	std::shared_ptr<IValue> _pval;
-	Gpl_type _type;
 	bool _bInitialized;
 };
 
-/*template<class T>
-Symbol::Symbol(const std::string& name, const T& val)
-{
-	_name = name;
-	_pvar.reset(new GPLVariant(val));
-}
 
-template<class T>
-const T& Symbol::get_value() const
-{
-	return _pvar->get_value<T>();
-}*/
 
+// Points to a symbol. This reference may not be changed.
+// The get/set calls are all routed back to the symbol
+class Reference: public IValue
+{
+public:
+	Reference(std::shared_ptr<Symbol> pSymbol);
+	virtual ~Reference();	
+
+	virtual ConversionStatus get_int(int&) const;
+	virtual ConversionStatus get_double(double&) const;
+	virtual ConversionStatus get_string(std::string&) const;
+	virtual ConversionStatus get_game_object(std::shared_ptr<Game_object>&) const;
+	virtual ConversionStatus get_animation_block(std::shared_ptr<Animation_block>&) const;
+
+	virtual ConversionStatus set_int(const int&);
+	virtual ConversionStatus set_double(const double&);
+	virtual ConversionStatus set_string(const std::string&);
+	virtual ConversionStatus set_game_object(const std::shared_ptr<Game_object>&);
+	virtual ConversionStatus set_animation_block(const std::shared_ptr<Animation_block>&);
+	
+private:
+	std::shared_ptr<Symbol> _pSymbol;
+};
+
+/*
+// Points to the member variable of a specific object. This reference cannot be modified.
+// However, by means of the get/set functions one can access and modify the value of the 
+// member variable
+class MemberReferenceValue : public IValue
+{
+public:
+	MemberReferenceValue(std::shared_ptr<Symbol> symbol, std::string member_name);
+	virtual ~MemberReferenceValue();	
+
+	Gpl_type get_type() const;
+	bool is_reference() const;
+	bool is_constant() const;
+	
+	int get_int() const;
+	double get_double() const;
+	std::string get_string() const;
+	std::shared_ptr<Game_object> get_game_object() const;
+	std::shared_ptr<Animation_block> get_animation_block() const;
+
+	void set_int(int);
+	void set_double(double);
+	void set_string(const std::string&);
+	void set_game_object(const std::shared_ptr<Game_object>&);
+	void set_animation_block(const std::shared_ptr<Animation_block>&);
+
+	std::shared_ptr<Symbol> get_reference() const;
+	const std::string& get_member_name() const;
+
+protected:
+	std::shared_ptr<GPLVariant> get_variant() const;
+
+private:
+	std::shared_ptr<Symbol> _pSymbol;
+	std::string _member;
+};
+*/
 
 #endif

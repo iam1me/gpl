@@ -5,270 +5,353 @@
 #include "GPLVariant.h"
 #include "parser.h"
 
-template<>
-GPLVariant::GPLVariant<int>(const int& val)
+GPLVariant::GPLVariant(int val, bool bConstant)
+	: IValue(INT, bConstant)
 {
-	_type = INT;
 	_val_int = val;
+	_binit = true;
 }
 
-template<>
-GPLVariant::GPLVariant<double>(const double& val)
+GPLVariant::GPLVariant(double val, bool bConstant)
+	: IValue(DOUBLE, bConstant)
 {
-	_type = DOUBLE;
 	_val_double = val;
+	_binit = true;
 }
 
-template<>
-GPLVariant::GPLVariant<std::string>(const std::string& val)
+GPLVariant::GPLVariant(const std::string& val, bool bConstant)
+	: IValue(STRING, bConstant)
 {
-	_type = STRING;
+	TRACE_VERBOSE("GPLVariant::GPLVariant('" << val << "', " << (bConstant? "true" : "false") << ")")
 	_val_pstr = new std::string(val);
+	_binit = true;
 }
 
-template<>
-GPLVariant::GPLVariant<const char*&>(const char*& val)
+GPLVariant::GPLVariant(const std::shared_ptr<Game_object>& val, bool bConstant)
+	: IValue(GAME_OBJECT, bConstant)
 {
-	_type = STRING;
-	_val_pstr = new std::string(val);
+	_val_pobj = new std::shared_ptr<Game_object>(val);
+	_binit = true;
 }
 
-template<>
-GPLVariant::GPLVariant(const std::shared_ptr<Game_object>& pval)
+GPLVariant::GPLVariant(const std::shared_ptr<Animation_block>& val, bool bConstant)
+	: IValue(ANIMATION_BLOCK, bConstant)
 {
-	TRACE_VERBOSE("GPLVariant::GPLVariant(const std::shared_ptr<Game_object>&) - BEGIN")
-	_type = GAME_OBJECT;
-	_val_pobj = new std::shared_ptr<Game_object>(pval);
-	TRACE_VERBOSE("GPLVariant::GPLVariant(const std::shared_ptr<Game_object>&) - END")
+	_val_panim = new std::shared_ptr<Animation_block>(val);
+	_binit = true;
 }
 
-template<>
-GPLVariant::GPLVariant(const std::shared_ptr<Animation_block>& pval)
+GPLVariant::GPLVariant(Gpl_type type, const std::shared_ptr<IValue>& pval, bool bConstant)
+	: IValue(type, bConstant)
 {
-	TRACE_VERBOSE("GPLVariant::GPLVariant(const std::shared_ptr<Animation_block>&) - BEGIN")
-	_type = ANIMATION_BLOCK;
-	_val_panim = new std::shared_ptr<Animation_block>(pval);
-	TRACE_VERBOSE("GPLVariant::GPLVariant(const std::shared_ptr<Animation_block>&) - END")
+	TRACE_VERBOSE("GPLVariant::GPLVariant(" << gpl_type_to_string(type) << ", "
+				<< pval->to_string() << ")")
+	ConversionStatus status;
+	switch(type)
+	{
+		case INT:
+		{
+			int num;
+			status = pval->get_int(num);
+			if(status == CONVERSION_ERROR) break;
+
+			status = set_int(num);
+			break;
+		}
+
+		case DOUBLE:
+		{
+			double val;
+			status = pval->get_double(val);
+			if(status == CONVERSION_ERROR) break;
+
+			status = set_double(val);
+			break;
+		}
+
+		case STRING:
+		{
+			std::string str;
+			status = pval->get_string(str);
+			if(status == CONVERSION_ERROR) break;
+		
+			TRACE_VERBOSE("GPLVariant::GPLVariant - calling set_string('" << str <<"')")
+			status = set_string(str);
+			break;
+		}
+
+		case GAME_OBJECT:
+		{
+			std::shared_ptr<Game_object> pobj;
+			status = pval->get_game_object(pobj);
+			if(status == CONVERSION_ERROR) break;
+
+			status = set_game_object(pobj);
+			break;
+		}
+
+		case ANIMATION_BLOCK:
+		{
+			std::shared_ptr<Animation_block> panim;
+			status = pval->get_animation_block(panim);
+			if(status == CONVERSION_ERROR) break;
+
+			status = set_animation_block(panim);
+			break;
+		}
+
+		default:
+			status = CONVERSION_ERROR;
+			break;
+	}
+
+	if(status == CONVERSION_ERROR)
+	{
+		std::string err = "GPLVariant::GPLVariant - CONVERSION_ERROR. Failed to convert a value of type "
+					+ gpl_type_to_string(pval->get_type()) + " to a value of type "
+					+ gpl_type_to_string(type);
+
+		TRACE_ERROR(err);
+		throw std::logic_error(err);
+	}
+	_binit = true;
+	TRACE_VERBOSE("GPLVariant::GPLVariant - Complete")
 }
+
+GPLVariant::GPLVariant(Gpl_type type, bool bConstant)
+	: IValue(type, bConstant)
+{
+	TRACE_VERBOSE("GPLVariant::GPLVariant(" << gpl_type_to_string(type) << ", "
+				<< (bConstant? "true" : "false") << ") Defaulting Value...")
+	_binit = false;
+	switch(type)
+	{
+		case INT:
+			set_int(0);
+			break;
+		case DOUBLE:
+			set_double(0.0);
+			break;
+		case STRING:
+			set_string("");
+			break;
+		default:
+			TRACE_VERBOSE("No Default Value for type " << gpl_type_to_string(type))
+			break;
+	}
+}
+
 
 GPLVariant::~GPLVariant()
 {
-	if(_type & STRING)
+	if(!_binit) return;
+
+	Gpl_type type = get_type();
+	if(type & STRING)
 	{
 		delete _val_pstr;
 	}
-	else if(_type & GAME_OBJECT)
+	else if(type & GAME_OBJECT)
 	{
 		(*_val_pobj).reset();
 	}
-	else if(_type & ANIMATION_BLOCK)
+	else if(type & ANIMATION_BLOCK)
 	{
 		(*_val_panim).reset();
 	}
 }
 
-Gpl_type GPLVariant::get_type() const
+
+ConversionStatus GPLVariant::get_int(int& ret_val) const
 {
-	return _type;
+	if(!_binit)
+	{ 
+		TRACE_ERROR("GPLVariant::get_string - Not Initialized")
+		throw std::logic_error("GPLVariant is not initialized");
+	}
+
+	ConversionStatus result = get_conversion_status(get_type(), INT);
+	if(result == CONVERSION_ERROR)
+	{
+		return result;
+	}
+	ret_val = _val_int;
+	return result;
 }
 
-/*void GPLVariant::set_type(const Gpl_type& type)
+ConversionStatus GPLVariant::get_double(double& ret_val) const
 {
-	if(type == _type) return;
-
-	if(_type & STRING)
-	{
-		delete _val_pstr;
-	}
-	else if(_type & GAME_OBJECT)
-	{
-		_val_pobj.reset();
-	}
-	else if(_type & ANIMATION_OBJECT)
-	{
-		_val_panim.reset();
+	if(!_binit)
+	{ 
+		TRACE_ERROR("GPLVariant::get_double - Not Initialized")
+		throw std::logic_error("GPLVariant is not initialized");
 	}
 
-	_type = type;
-	switch(_type)
+	TRACE_VERBOSE("GPLVariant::get_double - Checking conversion status. Current Type: " << gpl_type_to_string(get_type()));
+	ConversionStatus result = get_conversion_status(get_type(), DOUBLE);
+	if(result == CONVERSION_ERROR)
 	{
-		case INT:
-			_val_int = 0;
+		TRACE_VERBOSE("GPLVariant::get_double - Conversion Error");
+		return result;
+	}
+
+	if(result == CONVERSION_UPCAST_DOUBLE)
+	{
+		TRACE_VERBOSE("CONVERSION_UPCAST_DOUBLE");
+		ret_val = (double)_val_int;
+	}
+	else
+	{
+		ret_val = _val_double;
+	}
+
+	return result;
+}
+
+ConversionStatus GPLVariant::get_string(std::string& ret_val) const
+{
+	if(!_binit)
+	{
+		TRACE_ERROR("GPLVariant::get_string - Not Initialized")
+		throw std::logic_error("GPLVariant is not initialized");
+	}
+
+	ConversionStatus result = get_conversion_status(get_type(), STRING);
+	if(result == CONVERSION_ERROR)
+	{
+		return result;
+	}
+
+	if(result == CONVERSION_UPCAST_STRING)
+		ret_val = to_string();
+	else
+		ret_val = *_val_pstr;
+
+	return result;
+}
+
+ConversionStatus GPLVariant::get_game_object(std::shared_ptr<Game_object>& ret_val) const
+{
+	if(!_binit)
+	{ 
+		TRACE_ERROR("GPLVariant::get_string - Not Initialized")
+		throw std::logic_error("GPLVariant is not initialized");
+	}
+
+	if(get_type() != GAME_OBJECT) return CONVERSION_ERROR;
+
+	ret_val = *_val_pobj;
+	return CONVERSION_NONE;
+}
+
+ConversionStatus GPLVariant::get_animation_block(std::shared_ptr<Animation_block>& ret_val) const
+{
+	if(!_binit)
+	{ 
+		TRACE_ERROR("GPLVariant::get_string - Not Initialized")
+		throw std::logic_error("GPLVariant is not initialized");
+	}
+
+	if(get_type() != ANIMATION_BLOCK) return CONVERSION_ERROR;
+
+	ret_val =  *_val_panim;
+	return CONVERSION_NONE;
+}
+
+ConversionStatus GPLVariant::set_int(const int& val)
+{
+	ConversionStatus result = get_conversion_status(get_type(), INT);
+	if(result == CONVERSION_ERROR) return result;
+
+	switch(result)
+	{
+		case CONVERSION_NONE:
+			_val_int = val;
 			break;
 
-		case DOUBLE:
-			_val_double = 0;
-			break;
-		
-		case STRING:
-			_val_pstr = new std::string("");
+		case CONVERSION_UPCAST_DOUBLE:
+			_val_double = (double)val;
 			break;
 
-		case GAME_OBJECT:
-			_val_pobj = new Game_object();
+		case CONVERSION_UPCAST_STRING:
+			*_val_pstr = std::to_string(val);
 			break;
-		
+
 		default:
-			throw std::runtime_error("GPLVariant::set_type - Unsupported Type");
+			throw std::logic_error("GPLVariant::set_int() - Conversion Not Implemented");
 	}
-}*/
-
-std::string GPLVariant::to_string() const
-{
-	std::string ret;
-	switch(_type)
-	{
-		case INT:
-			ret = std::to_string(_val_int);
-			break;
-
-		case DOUBLE:
-		{
-			char buff[256];
-			sprintf(buff, "%g", _val_double);
-			ret += buff;
-			break;
-		}
-		case STRING:
-			ret = *_val_pstr;	
-			break;
-
-		case GAME_OBJECT:
-		{
-			std::stringstream temp;
-			(*_val_pobj)->print(temp);
-			return temp.str();
-		}
-
-		case ANIMATION_BLOCK:
-		{
-			std::stringstream temp;
-			(*_val_panim)->print(temp);
-			return temp.str();
-		}
-
-		default:
-			std::string err = "GPLVariant::to_string - Unsupported Type (";
-			err += std::to_string((int)_type);
-			err += ")";
-			throw std::runtime_error(err);
-	}
-
-	return ret;
+	_binit = true;
+	return result;
 }
 
-template<>
-void GPLVariant::set_value<int>(const int& val)
+ConversionStatus GPLVariant::set_double(const double& val)
 {
-	if(_type != INT)
+	ConversionStatus result = get_conversion_status(get_type(), DOUBLE);
+	if(result == CONVERSION_ERROR) return result;
+
+	if(result == CONVERSION_UPCAST_STRING)
 	{
-		throw std::logic_error("GPLVariant::set_value<int> - the variant is not set to type INT");
+		char buff[256];
+		sprintf(buff, "%g", val);
+		*_val_pstr = std::string(buff);
 	}
-	_val_int = val;
+	else
+	{
+		_val_double = val;
+	}
+
+	_binit = true;
+	return result;
 }
 
-template<>
-void GPLVariant::set_value<double>(const double& val)
+ConversionStatus GPLVariant::set_string(const std::string& val)
 {
-	if(_type != DOUBLE)
-	{
-		throw std::logic_error("GPLVariant::set_value<double> - the variant is not set to type DOUBLE");
-	}
+	if(get_type() != STRING) return CONVERSION_ERROR;
 
-	_val_double = val;
+	if(!_binit)
+	{
+		_val_pstr = new std::string(val);
+		_binit = true;
+	}
+	else
+	{
+		*_val_pstr = val;
+	}
+	return CONVERSION_NONE;
 }
 
-
-template<>
-void GPLVariant::set_value<std::string>(const std::string& val)
+ConversionStatus GPLVariant::set_game_object(const std::shared_ptr<Game_object>& val)
 {
-	if(_type != STRING)
+	if(get_type() != GAME_OBJECT) return CONVERSION_ERROR;
+
+	if(!_binit)
 	{
-		throw std::logic_error("GPLVariant::set_value<std::string> - the variant is not set to type STRING");
+		_val_pobj = new std::shared_ptr<Game_object>(val);
+		_binit = true;
+	}
+	else
+	{
+		*_val_pobj = val;
 	}
 
-	*_val_pstr = val;
+	return CONVERSION_NONE;
 }
 
-template<>
-void GPLVariant::set_value<const char*&>(const char*& val)
-{
-	if(_type != STRING)
+ConversionStatus GPLVariant::set_animation_block(const std::shared_ptr<Animation_block>& val)
+{	
+	if(get_type() != ANIMATION_BLOCK) return CONVERSION_ERROR;
+
+	if(!_binit)
 	{
-		throw std::logic_error("GPLVariant::set_value<std::string> - the variant is not set to type STRIGN");
+		_val_panim = new std::shared_ptr<Animation_block>(val);
+		_binit = true;
+	}else{
+		*_val_panim = val;
 	}
-	*_val_pstr = val;
+	return CONVERSION_NONE;
 }
 
-template<>
-void GPLVariant::set_value<const std::shared_ptr<Game_object>&>(const std::shared_ptr<Game_object>& val)
+bool GPLVariant::is_initialized() const
 {
-	if(_type != GAME_OBJECT)
-	{
-		throw std::logic_error("GPLVariant::set_value<std::shared_ptr<Game_object>&> - the variant is not set to type GAME_OBJECT");
-	}
-	*_val_pobj = val;
-}
-
-template<>
-void GPLVariant::set_value<const std::shared_ptr<Animation_block>&>(const std::shared_ptr<Animation_block>& val)
-{
-	if(_type != ANIMATION_BLOCK)
-	{
-		throw std::logic_error("GPLVariant::set_value<std::shared_ptr<Game_object>&> - the variant is not set to type ANIMATION_BLOCK");
-	}
-	*_val_panim = val;
-}
-
-template<>
-const int& GPLVariant::get_value<int>() const
-{
-	if(_type != INT)
-	{
-		throw std::logic_error("GPLVariant::get_value<int> - the variant is not of type INT");
-	}
-
-	return _val_int;
-}
-
-template<>
-const double& GPLVariant::get_value<double>() const
-{
-	if(_type != DOUBLE)
-	{
-		throw std::logic_error("GPLVariant::get_value<double> - the variant is not of type DOUBLE");
-	}
-
-	return _val_double;
-}
-
-template<>
-const std::string& GPLVariant::get_value<std::string>() const
-{
-	if(_type != STRING)
-	{
-		throw std::logic_error("GPLVariant::get_value<std::string> - the variant is not of type STRING");
-	}
-	
-	return *_val_pstr;
-}
-
-template<>
-const std::shared_ptr<Game_object>& GPLVariant::get_value<std::shared_ptr<Game_object>>() const
-{
-	if(_type != GAME_OBJECT)
-	{
-		throw std::logic_error("GPLVariant::get_value<Game_object> - the variant is not of type GAME_OBJECT");
-	}
-	return *_val_pobj;
-}
-
-template<>
-const std::shared_ptr<Animation_block>& GPLVariant::get_value<std::shared_ptr<Animation_block>>() const
-{
-	if(_type != ANIMATION_BLOCK)
-	{
-		throw std::logic_error("GPLVariant::get_value<Animation_block> - the variant is not of type ANIMATION_BLOCK");
-	}
-	return *_val_panim;
+	return _binit;
 }

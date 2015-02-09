@@ -30,11 +30,7 @@
 #include "gpl_type.h"
 #include "expression.h"
 #include "value.h"
-#include "triangle.h"
-#include "rectangle.h"
-#include "circle.h"
-#include "pixmap.h"
-#include "textbox.h"
+#include "game_object.h"
 #include "animation_block.h"
 #include "parameter.h"
 

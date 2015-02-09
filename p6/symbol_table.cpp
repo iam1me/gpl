@@ -29,6 +29,7 @@ std::shared_ptr<Symbol> Symbol_table::find_symbol
 
 bool Symbol_table::insert_symbol(std::shared_ptr<Symbol> pSymbol)
 {
+	TRACE_VERBOSE("Symbol_table::insert_symbol - \"" << pSymbol->get_name() << "\"")
 	if(!pSymbol)
 	{
 		throw std::runtime_error("Symbol_table::insert_symbol - Symbol is NULL");
@@ -44,7 +45,7 @@ void Symbol_table::print(std::ostream& out) const
 	for(SymbolMap::const_iterator it = _symbols.cbegin(); it != _symbols.cend(); it++)
 	{
 		const std::shared_ptr<Symbol>& pCur = it->second;
-		out << pCur->to_string() << "\n";
+		pCur->print(out);
 	}	
 }
 
@@ -53,8 +54,8 @@ bool Symbol_table::get(std::string name, int &val)
 	std::shared_ptr<Symbol> pSymbol = find_symbol(name);
 	if(!pSymbol || pSymbol->get_type() != INT) return false;
 
-	val = pSymbol->get_value()->get_int();
-	return true;
+	ConversionStatus result = pSymbol->get_int(val);
+	return (result != CONVERSION_ERROR);
 }
 
 bool Symbol_table::get(std::string name, double& val)
@@ -62,8 +63,8 @@ bool Symbol_table::get(std::string name, double& val)
 	std::shared_ptr<Symbol> pSymbol = find_symbol(name);
 	if(!pSymbol || pSymbol->get_type() != DOUBLE) return false;
 
-	val = pSymbol->get_value()->get_double();
-	return true;
+	ConversionStatus result = pSymbol->get_double(val);
+	return (result != CONVERSION_ERROR);
 }
 
 bool Symbol_table::get(std::string name, std::string& val)
@@ -71,21 +72,15 @@ bool Symbol_table::get(std::string name, std::string& val)
 	std::shared_ptr<Symbol> pSymbol = find_symbol(name);
 	if(!pSymbol || pSymbol->get_type() != STRING) return false;
 
-	val = pSymbol->get_value()->get_string();
-	return true;
+	ConversionStatus result = pSymbol->get_string(val);
+	return (result != CONVERSION_ERROR);
 }
 
 bool Symbol_table::get_type(std::string name, Gpl_type& type)
 {
 	std::shared_ptr<Symbol> pSymbol = find_symbol(name);
-	if(!pSymbol) 
-	{
-		//TRACE_ERROR("Symbol_table::get_type - Failed to find Symbol '" << name << "'")
-		return false;
-	}
+	if(!pSymbol) return false;
 
-	//TRACE_VERBOSE("Symbol_table::get_type - Symbol: '" << name << "', " 
-	//		<< "Type: '" << gpl_type_to_string(pSymbol->get_type()) << "'")
 	type = pSymbol->get_type();
 	return true;
 }
@@ -95,7 +90,6 @@ bool Symbol_table::set(std::string name, int val)
 	std::shared_ptr<Symbol> pSymbol = find_symbol(name);
 	if(!pSymbol || !(pSymbol->get_type() & INT)) return false;
 
-	std::shared_ptr<IValue> pval(new ConstantValue(val));
-	pSymbol->set_value(pval);
-	return true;
+	ConversionStatus result = pSymbol->set_int(val);
+	return (result != CONVERSION_ERROR);
 }
