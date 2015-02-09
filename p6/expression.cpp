@@ -269,7 +269,7 @@ std::shared_ptr<IValue> MinusExpression::eval() const
 		pval1->get_double(num1);
 		pval2->get_double(num2);
 
-		double result = num1 + num2;
+		double result = num1 - num2;
 		pret.reset(new GPLVariant(result, true));
 	}
 	
@@ -383,25 +383,16 @@ std::shared_ptr<IValue> DivideExpression::eval() const
 	std::shared_ptr<IValue> pval2 = get_child(1)->eval();
 	std::shared_ptr<IValue> pret = nullptr;
 
-	//check for division by zero...
-	double div;
-	pval2->get_double(div);
-
-	if(div == 0)
-	{
-		// On Divide By Zero - just return zero
-		Error::error(Error::DIVIDE_BY_ZERO_AT_PARSE_TIME);
-
-		if(_type == INT) { pret.reset(new GPLVariant(0, true)); }
-		else { pret.reset(new GPLVariant(0.0, true)); }
-	}
-	else if(_type == INT)
+	if(_type == INT)
 	{
 		int num1, num2;
 		pval1->get_int(num1);
 		pval2->get_int(num2);
 
-		int result = num1 / num2;
+		int result = 0;
+		if(num2 == 0) Error::error(Error::DIVIDE_BY_ZERO_AT_PARSE_TIME);
+		else result = num1 / num2;
+
 		pret.reset(new GPLVariant(result, true));
 	}
 	else
@@ -410,7 +401,10 @@ std::shared_ptr<IValue> DivideExpression::eval() const
 		pval1->get_double(num1);
 		pval2->get_double(num2);
 
-		double result = num1 / num2;
+		double result;
+		if(num2 == 0) Error::error(Error::DIVIDE_BY_ZERO_AT_PARSE_TIME);
+		else result = num1 / num2;
+
 		pret.reset(new GPLVariant(result, true));
 	}	
 
@@ -659,7 +653,7 @@ std::shared_ptr<IValue> SqrtExpression::eval() const
 	pval->get_double(result);
 	result = sqrt(result);
 
-	return std::shared_ptr<IValue>(new GPLVariant(result, true));
+	return std::shared_ptr<IValue>(new GPLVariant((double)result, true));
 }
 
 
@@ -806,7 +800,7 @@ std::shared_ptr<IValue> EqualExpression::eval() const
 	{
 		double dbl1, dbl2;
 		pval1->get_double(dbl1);
-		dbl2 = pval2->get_double(dbl2);
+		pval2->get_double(dbl2);
 		result = (dbl1 == dbl2);
 
 		TRACE_VERBOSE("EQUAL(" << dbl1 << ", " << dbl2 << ") = " << result)
