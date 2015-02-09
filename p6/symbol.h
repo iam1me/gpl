@@ -64,42 +64,37 @@ private:
 	std::shared_ptr<Symbol> _pSymbol;
 };
 
-/*
+
 // Points to the member variable of a specific object. This reference cannot be modified.
 // However, by means of the get/set functions one can access and modify the value of the 
 // member variable
-class MemberReferenceValue : public IValue
+class MemberReference : public IValue
 {
 public:
-	MemberReferenceValue(std::shared_ptr<Symbol> symbol, std::string member_name);
-	virtual ~MemberReferenceValue();	
+	MemberReference(std::string symbol_name, std::string member_name);
+	MemberReference(std::shared_ptr<Symbol> symbol, std::string member_name);
+	virtual ~MemberReference();	
 
-	Gpl_type get_type() const;
-	bool is_reference() const;
-	bool is_constant() const;
-	
-	int get_int() const;
-	double get_double() const;
-	std::string get_string() const;
-	std::shared_ptr<Game_object> get_game_object() const;
-	std::shared_ptr<Animation_block> get_animation_block() const;
+	virtual const std::string& get_symbol_name() const;
+	virtual const std::string& get_member_name() const;
 
-	void set_int(int);
-	void set_double(double);
-	void set_string(const std::string&);
-	void set_game_object(const std::shared_ptr<Game_object>&);
-	void set_animation_block(const std::shared_ptr<Animation_block>&);
+	virtual ConversionStatus get_int(int&) const;
+	virtual ConversionStatus get_double(double&) const;
+	virtual ConversionStatus get_string(std::string&) const;
+	virtual ConversionStatus get_game_object(std::shared_ptr<Game_object>&) const;
+	virtual ConversionStatus get_animation_block(std::shared_ptr<Animation_block>&) const;
 
-	std::shared_ptr<Symbol> get_reference() const;
-	const std::string& get_member_name() const;
-
-protected:
-	std::shared_ptr<GPLVariant> get_variant() const;
+	virtual ConversionStatus set_int(const int&);
+	virtual ConversionStatus set_double(const double&);
+	virtual ConversionStatus set_string(const std::string&);
+	virtual ConversionStatus set_game_object(const std::shared_ptr<Game_object>&);
+	virtual ConversionStatus set_animation_block(const std::shared_ptr<Animation_block>&);	
 
 private:
+	std::shared_ptr<Game_object> _pObj;
 	std::shared_ptr<Symbol> _pSymbol;
-	std::string _member;
+	std::string _member_name;
+	Gpl_type _member_type;
 };
-*/
 
 #endif

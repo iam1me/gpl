@@ -939,17 +939,35 @@ variable:
     | T_ID T_PERIOD T_ID
 	{
 		GPL_BEGIN_EXPR_BLOCK("variable[2]")
-		throw std::logic_error("T_ID T_PERIOD T_ID - Not Implemented Yet");
+		std::string obj_name(*$1);
+		std::string member_name(*$3);
 		delete $1; // free the ID
 		delete $3; // free the ID
+
+		TRACE_VERBOSE("Member Variable Reference. Object: '" + obj_name 
+				+ "', Member: '" + member_name + "'")
+
+		std::shared_ptr<Symbol> pSymbol = Symbol_table::instance()->find_symbol(obj_name);
+		if(!pSymbol)
+		{
+			throw undeclared_variable(obj_name);
+		}
+
+		std::shared_ptr<IValue> pval(new MemberReference(pSymbol, member_name));
+		$$ = new ValueExpression(pval);		
+
 		GPL_END_EXPR_BLOCK($$)
 	}
     | T_ID T_LBRACKET expression T_RBRACKET T_PERIOD T_ID
 	{
 		GPL_BEGIN_EXPR_BLOCK("variable[3]")
-		throw std::logic_error("T_ID T_LBRACKET expression T_RBRACKET T_PERIOD T_ID - Not Implemented yet");
+		std::string obj_name(*$1);
+		std::string member_name(*$6);
 		delete $1; // free the ID
 		delete $6; // free the ID
+
+		throw std::runtime_error("Not Implemented");	
+
 		GPL_END_EXPR_BLOCK($$)
 	}
     ;

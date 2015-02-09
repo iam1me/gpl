@@ -58,8 +58,11 @@ public:
 	*/
 	
 protected:
+	IValue();
 	IValue(Gpl_type type, bool bConstant);
 
+	virtual void set_type(Gpl_type type);
+	virtual void set_is_constant(bool bConstant);
 private:
 	Gpl_type _type;
 	bool _is_const;

@@ -4,10 +4,13 @@
 #include "game_object.h"
 #include "animation_block.h"
 
+IValue::IValue()
+{}
+
 IValue::IValue(Gpl_type type, bool bConstant)
 {
-	TRACE_VERBOSE("IValue::IValue(" << gpl_type_to_string(type) << ", "
-			<< (bConstant? "true" : "false") << ")")
+	/*TRACE_VERBOSE("IValue::IValue(" << gpl_type_to_string(type) << ", "
+			<< (bConstant? "true" : "false") << ")") */
 	_type = type;
 	_is_const = bConstant;
 }
@@ -15,6 +18,16 @@ IValue::IValue(Gpl_type type, bool bConstant)
 IValue::~IValue()
 {
 
+}
+
+void IValue::set_type(Gpl_type type)
+{
+	_type = type;
+}
+
+void IValue::set_is_constant(bool bConstant)
+{
+	_is_const = bConstant;
 }
 
 Gpl_type IValue::get_type() const
