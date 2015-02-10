@@ -559,6 +559,7 @@ object_declaration:
 				break;
 			case TEXTBOX:
 				pobj.reset(new Textbox());
+				break;
 			default:
 				throw std::invalid_argument("Unrecognized Game Object Type");
 		}
@@ -569,6 +570,7 @@ object_declaration:
 		{
 			Gpl_type member_type;
 			Status result;
+			ConversionStatus conv_status;
 			std::shared_ptr<Parameter> pcur;
 			std::shared_ptr<IExpression> pexpr;
 			for(ParameterList::iterator it = pParams->begin(); it != pParams->end(); it++)
@@ -576,13 +578,25 @@ object_declaration:
 				pcur = *it;
 				pexpr = pcur->get_expr();
 
+				// Determine the Member Type
+				result = pobj->get_member_variable_type(pcur->get_name(), member_type);
+				if(result != OK)
+				{
+					TRACE_VERBOSE("Failed to retrieve type of member '" + pcur->get_name()
+						+ "': " + status_to_string(result))
+					
+					unknown_parameter(game_object_type_to_string($1), pcur->get_name()).write_exception();
+				}				
+		
 				std::shared_ptr<IValue> pval = pexpr->eval();
-				switch(pval->get_type())
+				switch(member_type)
 				{
 					case INT:
 					{
 						int temp;
-						pval->get_int(temp);
+						conv_status = pval->get_int(temp);
+						if(conv_status == CONVERSION_ERROR) break;
+
 						result = pobj->set_member_variable(pcur->get_name(),temp);
 						break;
 					}
@@ -590,7 +604,9 @@ object_declaration:
 					case DOUBLE:
 					{
 						double temp;
-						pval->get_double(temp);
+						conv_status = pval->get_double(temp);
+						if(conv_status == CONVERSION_ERROR) break;
+
 						result = pobj->set_member_variable(pcur->get_name(), temp);
 						break;						
 					}
@@ -598,7 +614,9 @@ object_declaration:
 					case STRING:
 					{
 						std::string temp;
-						pval->get_string(temp);
+						conv_status = pval->get_string(temp);
+						if(conv_status == CONVERSION_ERROR) break;
+
 						result = pobj->set_member_variable(pcur->get_name(), temp);
 						break;	
 					}
@@ -606,21 +624,20 @@ object_declaration:
 					case ANIMATION_BLOCK:
 					{
 						std::shared_ptr<Animation_block> temp;
-						pval->get_animation_block(temp);
+						conv_status = pval->get_animation_block(temp);
+						if(conv_status == CONVERSION_ERROR) break;
+
 						result = pobj->set_member_variable(pcur->get_name(), temp);
 						break;
 					}
 
 					default:
+						TRACE_ERROR("Unsupported Game Object Type: " + gpl_type_to_string(member_type))
 						result = MEMBER_NOT_OF_GIVEN_TYPE;
 						break;
 				}
 
-				if(result == MEMBER_NOT_DECLARED)
-				{
-					unknown_parameter(game_object_type_to_string($1), pcur->get_name()).write_exception();
-				}
-				else if(result == MEMBER_NOT_OF_GIVEN_TYPE)
+				if(conv_status == CONVERSION_ERROR || result == MEMBER_NOT_OF_GIVEN_TYPE)
 				{
 					invalid_parameter_type(var_name, pcur->get_name()).write_exception();
 				}

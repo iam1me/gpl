@@ -133,6 +133,8 @@ ArrayMemberReferenceExpression::ArrayMemberReferenceExpression(std::string array
 			std::string member_name, std::shared_ptr<IExpression> ndx_expr)
 	: IExpression()
 {
+	TRACE_VERBOSE("ArrayMemberReference::ArrayMemberReference - Array: '" + array_name + "', "
+				+ "MemberName: '" + member_name + "'")
 	if(!ndx_expr) throw std::invalid_argument("ArrayMemberReferenceExpression - Index Expression NULL");
 
 	// Check to see if the array exists
@@ -156,6 +158,7 @@ ArrayMemberReferenceExpression::ArrayMemberReferenceExpression(std::string array
 	{
 		throw undeclared_member(array_name, member_name);
 	}
+	TRACE_VERBOSE("Member Type: " + gpl_type_to_string(_type))
 
 	// Check the Index Expression Type
 	if(ndx_expr->get_type() != INT)
@@ -164,7 +167,7 @@ ArrayMemberReferenceExpression::ArrayMemberReferenceExpression(std::string array
 	}
 
 	_array_name = array_name;
-	_member_name = _member_name;
+	_member_name = member_name;
 	add_child(ndx_expr);
 }
 
@@ -179,6 +182,9 @@ const std::string& ArrayMemberReferenceExpression::get_member_name() const
 
 std::shared_ptr<IValue> ArrayMemberReferenceExpression::eval() const
 {
+	TRACE_VERBOSE("ArrayMemberReferenceExpression::eval - Array: '" + _array_name + "', "
+				+ "Member: '" + _member_name + "'")
+
 	std::shared_ptr<IValue> ndx_val = get_child(0)->eval();
 	
 	int ndx;
@@ -193,6 +199,7 @@ std::shared_ptr<IValue> ArrayMemberReferenceExpression::eval() const
 	{
 		throw index_out_of_bounds(_array_name, ndx);
 	}
+	TRACE_VERBOSE("Symbol '" + ref_name + "' Found!")
 
 	std::shared_ptr<Game_object> pObj;
 	if(pSymbol->get_game_object(pObj) == CONVERSION_ERROR)
@@ -200,6 +207,7 @@ std::shared_ptr<IValue> ArrayMemberReferenceExpression::eval() const
 		throw object_expected_lhs(_array_name);
 	}
 
+	TRACE_VERBOSE("Retrieving the Value of Member '" + _member_name + "'. Type: " + gpl_type_to_string(_type));
 	Status member_status;
 	std::shared_ptr<IValue> pret;
 	switch(_type)
@@ -250,6 +258,7 @@ std::shared_ptr<IValue> ArrayMemberReferenceExpression::eval() const
 
 	if(member_status != OK || !pret)
 	{
+		TRACE_ERROR("ArrayMemberReferenceExpression::eval - Member Status: " + status_to_string(member_status))
 		throw undefined_error();
 	}
 

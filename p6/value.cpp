@@ -75,7 +75,7 @@ ConversionStatus IValue::get_conversion_status(Gpl_type src_type, Gpl_type dest_
 	
 std::string IValue::to_string() const
 {
-	TRACE_VERBOSE("IValue::to_string() - Type: " << gpl_type_to_string(get_type()))
+	//TRACE_VERBOSE("IValue::to_string() - Type: " << gpl_type_to_string(get_type()))
 
 	std::string ret;
 	switch(_type)

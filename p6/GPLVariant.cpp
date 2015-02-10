@@ -202,6 +202,7 @@ ConversionStatus GPLVariant::get_double(double& ret_val) const
 	}
 	else
 	{
+		TRACE_VERBOSE("CONVERSION_NONE");
 		ret_val = _val_double;
 	}
 
@@ -219,11 +220,15 @@ ConversionStatus GPLVariant::get_string(std::string& ret_val) const
 	ConversionStatus result = get_conversion_status(get_type(), STRING);
 	if(result == CONVERSION_ERROR)
 	{
+		TRACE_ERROR("GPLVariant::get_string - Conversion Error from type " + gpl_type_to_string(get_type()));
 		return result;
 	}
 
 	if(result == CONVERSION_UPCAST_STRING)
+	{
+		TRACE_VERBOSE("CONVERSION_UPCAST_STRING")
 		ret_val = to_string();
+	}
 	else
 		ret_val = *_val_pstr;
 
