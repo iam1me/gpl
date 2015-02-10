@@ -177,4 +177,13 @@ public:
 	virtual ~invalid_parameter_type() {};
 };
 
+class object_expected_lhs : public gpl_exception
+{
+public:
+	object_expected_lhs(std::string symbol_name)
+		: gpl_exception(Error::LHS_OF_PERIOD_MUST_BE_OBJECT, symbol_name) {};
+	virtual ~object_expected_lhs() {};
+};
+          
+
 #endif

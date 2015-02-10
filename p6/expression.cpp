@@ -67,6 +67,7 @@ Gpl_type ValueExpression::get_type() const
 
 ArrayReferenceExpression::ArrayReferenceExpression
 	(std::string array_name, std::shared_ptr<IExpression> ndx_expr)
+	: IExpression()
 {
 	_arrayName = array_name;
 
@@ -126,6 +127,133 @@ std::string ArrayReferenceExpression::get_arrayName() const
 Gpl_type ArrayReferenceExpression::get_type() const
 {
 	return _type;
+}
+
+ArrayMemberReferenceExpression::ArrayMemberReferenceExpression(std::string array_name, 
+			std::string member_name, std::shared_ptr<IExpression> ndx_expr)
+	: IExpression()
+{
+	if(!ndx_expr) throw std::invalid_argument("ArrayMemberReferenceExpression - Index Expression NULL");
+
+	// Check to see if the array exists
+	std::string search_name = array_name + "[0]";
+	std::shared_ptr<Symbol> pArray = Symbol_table::instance()->find_symbol(search_name);
+	if(!pArray)
+	{
+		throw not_an_array(array_name);
+	}
+
+	// Confirm that this is an array of Game_objects
+	std::shared_ptr<Game_object> pObj;
+	if(pArray->get_game_object(pObj) == CONVERSION_ERROR)
+	{
+		throw object_expected_lhs(array_name);
+	}
+
+	// Get Member Type
+	Status member_status = pObj->get_member_variable_type(member_name,_type);
+	if(member_status != OK)
+	{
+		throw undeclared_member(array_name, member_name);
+	}
+
+	// Check the Index Expression Type
+	if(ndx_expr->get_type() != INT)
+	{
+		throw invalid_index_type(array_name, ndx_expr->get_type());
+	}
+
+	_array_name = array_name;
+	_member_name = _member_name;
+	add_child(ndx_expr);
+}
+
+Gpl_type ArrayMemberReferenceExpression::get_type() const 
+{ return _type; }
+
+const std::string& ArrayMemberReferenceExpression::get_array_name() const
+{ return _array_name; }
+
+const std::string& ArrayMemberReferenceExpression::get_member_name() const
+{ return _member_name; }
+
+std::shared_ptr<IValue> ArrayMemberReferenceExpression::eval() const
+{
+	std::shared_ptr<IValue> ndx_val = get_child(0)->eval();
+	
+	int ndx;
+	if(ndx_val->get_int(ndx) == CONVERSION_ERROR)
+	{
+		throw invalid_array_size(_array_name, ndx_val->to_string());
+	}
+
+	std::string ref_name = _array_name + "[" + std::to_string(ndx) + "]";
+	std::shared_ptr<Symbol> pSymbol = Symbol_table::instance()->find_symbol(ref_name);
+	if(!pSymbol)
+	{
+		throw index_out_of_bounds(_array_name, ndx);
+	}
+
+	std::shared_ptr<Game_object> pObj;
+	if(pSymbol->get_game_object(pObj) == CONVERSION_ERROR)
+	{
+		throw object_expected_lhs(_array_name);
+	}
+
+	Status member_status;
+	std::shared_ptr<IValue> pret;
+	switch(_type)
+	{
+		case INT:
+		{
+			int val;
+			member_status = pObj->get_member_variable(_member_name, val);
+			if(member_status != OK) break;
+			pret.reset(new GPLVariant(val));
+			break;
+		}
+		case DOUBLE:
+		{
+			double val;
+			member_status = pObj->get_member_variable(_member_name, val);
+			if(member_status != OK) break;
+			pret.reset(new GPLVariant(val));
+			break;
+		}
+		case STRING:
+		{
+			std::string val;
+			member_status = pObj->get_member_variable(_member_name, val);
+			if(member_status != OK) break;
+			pret.reset(new GPLVariant(val));
+			break;
+		}
+		/*case GAME_OBJECT:
+		{
+			std::shared_ptr<Game_object> val;
+			member_status = pObj->get_member_variable(_member_name, val);
+			if(member_status != OK) break;
+			pret.reset(new GPLVariant(val));
+			break;
+		}*/
+		case ANIMATION_BLOCK:
+		{
+			std::shared_ptr<Animation_block> val;
+			member_status = pObj->get_member_variable(_member_name, val);
+			if(member_status != OK) break;
+			pret.reset(new GPLVariant(val));
+			break;
+		}
+		default:
+			throw undefined_error();
+	}
+
+	if(member_status != OK || !pret)
+	{
+		throw undefined_error();
+	}
+
+	return pret;
 }
 
 AddExpression::AddExpression(std::shared_ptr<IExpression> pArg1, std::shared_ptr<IExpression> pArg2)

@@ -13,7 +13,7 @@
 class IExpression;
 class ValueExpression;
 class ArrayReferenceExpression;
-class MemberReferenceExpression; //Implement later
+class ArrayMemberReferenceExpression; //Implement later
 
 // Math Expressions
 class IOperationalExpression;
@@ -109,7 +109,7 @@ class ArrayReferenceExpression : public IExpression
 public:
 	ArrayReferenceExpression(std::string array_name, 
 				std::shared_ptr<IExpression>);
-	~ArrayReferenceExpression();
+	virtual ~ArrayReferenceExpression();
 
 	Gpl_type get_type() const;
 
@@ -122,25 +122,24 @@ private:
 	Gpl_type _type;
 };
 
-
-/*class OperationalExpression : public IExpression
+class ArrayMemberReferenceExpression : public IExpression
 {
 public:
-	OperationalExpression(std::shared_ptr<IExpression> pArg1, Operator_type op);
-	OperationalExpression(std::shared_ptr<IExpression> pArg1, Operator_type op, std::shared_ptr<IExpression> pArg2);
-	~OperationalExpression();
+	ArrayMemberReferenceExpression(std::string array_name, std::string member_name,
+					std::shared_ptr<IExpression> ndx_expr);
+	virtual ~ArrayMemberReferenceExpression() {};
+	Gpl_type get_type() const;
 
 	std::shared_ptr<IValue> eval() const;
-	Gpl_type get_type() const;
-protected:
-	const ExpressionList& get_children() const;
-
+	const std::string& get_array_name() const;
+	const std::string& get_member_name() const;
 private:
-	bool _bUnary;
-	ExpressionList _children;
+	std::shared_ptr<IValue> _pVal;
+	std::string _array_name, _member_name;
 	Gpl_type _type;
-	Operator_type _op;
-};*/
+};
+
+
 
 class IOperationalExpression : public IExpression
 {

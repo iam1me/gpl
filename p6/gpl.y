@@ -646,6 +646,53 @@ object_declaration:
 		std::string var_name(*$2);
 		delete $2;
 
+		std::shared_ptr<IExpression> ndx_expr($4);
+		std::shared_ptr<IValue> ndx_val = ndx_expr->eval();
+
+		int size = 0;
+		if(ndx_val->get_int(size) == CONVERSION_ERROR)
+		{
+			throw invalid_index_type(var_name, ndx_val->get_type());
+		}
+		else if(size <= 0)
+		{
+			throw invalid_array_size(var_name, ndx_val->to_string());
+		}
+
+		bool bIsArray;
+		if(is_symbol_defined(var_name, &bIsArray))
+		{
+			throw previously_declared_variable(var_name);
+		}
+
+		std::shared_ptr<Game_object> pobj;
+		std::shared_ptr<IValue> pval;
+		for(int i = 0; i < size; i++)
+		{
+			switch($1)
+			{
+				case TRIANGLE:
+					pobj.reset(new Triangle());
+					break;
+				case RECTANGLE:
+					pobj.reset(new Rectangle());
+					break;
+				case CIRCLE:
+					pobj.reset(new Circle());
+					break;
+				case PIXMAP:
+					pobj.reset(new Pixmap());
+					break;
+				case TEXTBOX:
+					pobj.reset(new Textbox());
+					break;
+			}
+			pval.reset(new GPLVariant(pobj));
+
+			std::string symbol_name = var_name + "[" + std::to_string(i) + "]";
+			InsertSymbol(symbol_name, GAME_OBJECT, pval);
+		}
+
 		GPL_END_DECL_BLOCK()
 	}
     ;
@@ -820,6 +867,9 @@ animation_parameter:
 				throw std::invalid_argument("Unsupported Object Type: " 
 					+ game_object_type_to_string($1));
 		}
+
+		pObj->never_animate();
+		pObj->never_draw();
 
 		std::shared_ptr<IValue> pval(new GPLVariant(pObj));
 		InsertSymbol(param_name, GAME_OBJECT, pval);
@@ -1035,7 +1085,15 @@ variable:
 		delete $1; // free the ID
 		delete $6; // free the ID
 
-		throw std::runtime_error("Not Implemented");	
+		std::shared_ptr<IExpression> ndx_expr($3);
+
+		bool bIsArray;
+		if(!is_symbol_defined(obj_name, &bIsArray)) 
+			throw undeclared_variable(obj_name);
+		else if(!bIsArray) 
+			throw not_an_array(obj_name);
+
+		$$ = new ArrayMemberReferenceExpression(obj_name, member_name, ndx_expr);
 
 		GPL_END_EXPR_BLOCK($$)
 	}
