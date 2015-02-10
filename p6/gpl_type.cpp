@@ -87,11 +87,11 @@ std::string game_object_type_to_string(Game_object_type type)
 {
 	switch(type)
 	{
-		case TRIANGLE: return "triangle";
-		case RECTANGLE: return "rectangle";
-		case CIRCLE: return "circle";
-		case PIXMAP: return "pixmap";
-		case TEXTBOX: return "textbox";
+		case TRIANGLE: return "Triangle";
+		case RECTANGLE: return "Rectangle";
+		case CIRCLE: return "Circle";
+		case PIXMAP: return "Pixmap";
+		case TEXTBOX: return "Textbox";
 		default: break;
 	}
 	assert(false);

@@ -185,5 +185,22 @@ public:
 	virtual ~object_expected_lhs() {};
 };
           
+class object_type_mismatch : public gpl_exception
+{
+public:
+	object_type_mismatch(std::string object_name, std::string anim_name)
+		: gpl_exception(Error::TYPE_MISMATCH_BETWEEN_ANIMATION_BLOCK_AND_OBJECT, 
+		object_name, anim_name) {};
+	virtual ~object_type_mismatch() {};
+};
+
+class animation_parameter_not_unique : public gpl_exception
+{
+public:
+	animation_parameter_not_unique(std::string param_name)
+		: gpl_exception(Error::ANIMATION_PARAMETER_NAME_NOT_UNIQUE, param_name) {};
+	virtual ~animation_parameter_not_unique() {};
+};
+
 
 #endif

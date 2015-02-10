@@ -6,6 +6,7 @@
 #include "gpl_type.h"
 #include "value.h"
 #include "parser.h"
+#include "gpl_exception.h"
 
 Symbol::Symbol(const std::string& name, const int& val)
 	: GPLVariant(val, false)
@@ -160,18 +161,18 @@ ConversionStatus Reference::set_animation_block(const std::shared_ptr<Animation_
 MemberReference::MemberReference(std::string symbol_name, std::string member_name)
 	: IValue()
 {
-	_pSymbol = Symbol_table::instance()->find_symbol(member_name);
+	_pSymbol = Symbol_table::instance()->find_symbol(symbol_name);
 	if(!_pSymbol)
 	{
 		TRACE_ERROR("Symbol '" << symbol_name << "' Not Found")
-		throw std::runtime_error("Symbol '" + symbol_name + "' Not Found");
+		throw undeclared_variable(symbol_name);
 	}
 
 	ConversionStatus conv_status = _pSymbol->get_game_object(_pObj);
 	if(conv_status == CONVERSION_ERROR || !_pObj)
 	{
 		TRACE_ERROR("Failed to get_game_object from Symbol '" + symbol_name + "' - Conversion Error")
-		throw std::invalid_argument("Symbol '" + symbol_name + "' does not contain a Game_object");
+		throw object_expected_lhs(symbol_name);	
 	}
 
 	_member_name = member_name;
@@ -181,9 +182,7 @@ MemberReference::MemberReference(std::string symbol_name, std::string member_nam
 	if(member_status != OK)
 	{
 		TRACE_ERROR("MemberReference::MemberReference - " + status_to_string(member_status))
-		throw std::runtime_error("Failed to retrieve the member status of '" + _member_name 
-					+ "' from Game_object '" + _pSymbol->get_name() + "': "
-					+ status_to_string(member_status));
+		throw undeclared_member(symbol_name, member_name);
 	}
 
 	set_type(member_type);
@@ -205,7 +204,7 @@ MemberReference::MemberReference(std::shared_ptr<Symbol> symbol, std::string mem
 	if(conv_status == CONVERSION_ERROR || !_pObj)
 	{
 		TRACE_ERROR("Failed to get_game_object from Symbol '" + symbol_name + "' - Conversion Error")
-		throw std::invalid_argument("Symbol '" + symbol_name + "' does not contain a Game_object");
+		throw object_expected_lhs(symbol_name);
 	}
 
 	_member_name = member_name;
@@ -214,9 +213,7 @@ MemberReference::MemberReference(std::shared_ptr<Symbol> symbol, std::string mem
 	if(member_status != OK)
 	{
 		TRACE_ERROR("MemberReference::MemberReference - " + status_to_string(member_status))
-		throw std::runtime_error("Failed to retrieve the member status of '" + _member_name
-					+ "' from Game_object '" + _pSymbol->get_name() + "': "
-					+ status_to_string(member_status));
+		throw undeclared_member(symbol_name, member_name);
 	}
 
 	set_type(member_type);

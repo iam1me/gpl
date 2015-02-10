@@ -112,6 +112,24 @@ inline std::shared_ptr<Symbol> get_symbol(std::string name, bool* bIsArray)
 	return pSymbol;
 }
 
+#define GPL_BEGIN_BLOCK(block_name)\
+	std::string __gpl_block_name = block_name;\
+	TRACE_VERBOSE("GPL_BEGIN_BLOCK '" << __gpl_block_name << "'")\
+	try{
+
+
+#define GPL_END_BLOCK()\
+	} catch(const gpl_exception& ex)  {\
+		ex.write_exception();\
+		YYABORT;\
+	} catch(const std::exception& ex) {\
+		TRACE_ERROR("std::exception what(): " << ex.what())\
+		YYABORT;\
+	} catch(...) {\
+		TRACE_ERROR("Unrecognized Exception Caught. Aborting.")\
+		YYABORT;\
+	}
+
 #define GPL_BEGIN_EXPR_BLOCK(block_name)\
 	std::string __gpl_block_name = block_name;\
 	TRACE_VERBOSE("GPL_BEGIN_EXPR_BLOCK '" << __gpl_block_name << "'")\
@@ -585,7 +603,8 @@ object_declaration:
 					TRACE_VERBOSE("Failed to retrieve type of member '" + pcur->get_name()
 						+ "': " + status_to_string(result))
 					
-					unknown_parameter(game_object_type_to_string($1), pcur->get_name()).write_exception();
+			unknown_parameter(game_object_type_to_string($1), pcur->get_name()).write_exception();
+					continue;
 				}				
 		
 				std::shared_ptr<IValue> pval = pexpr->eval();
@@ -623,11 +642,24 @@ object_declaration:
 
 					case ANIMATION_BLOCK:
 					{
-						std::shared_ptr<Animation_block> temp;
-						conv_status = pval->get_animation_block(temp);
+						std::shared_ptr<Animation_block> pAnim;
+						conv_status = pval->get_animation_block(pAnim);
 						if(conv_status == CONVERSION_ERROR) break;
 
-						result = pobj->set_member_variable(pcur->get_name(), temp);
+						// Check to see if the animation block parameter would
+						// accept this kind of object
+						std::shared_ptr<Symbol> pAnimParam = pAnim->get_parameter_symbol();
+						std::shared_ptr<Game_object>pAnimObj;
+						conv_status = pAnimParam->get_game_object(pAnimObj);
+						
+						if(conv_status == CONVERSION_ERROR ||
+							pobj->type() != pAnimObj->type())
+						{
+				object_type_mismatch(var_name, pAnim->name()).write_exception();
+				break;	
+						}
+
+						result = pobj->set_member_variable(pcur->get_name(), pAnim);
 						break;
 					}
 
@@ -779,7 +811,16 @@ parameter:
 
 //---------------------------------------------------------------------
 forward_declaration:
-    T_FORWARD T_ANIMATION T_ID T_LPAREN animation_parameter T_RPAREN
+    T_FORWARD T_ANIMATION T_ID
+	{
+		GPL_BEGIN_BLOCK("forward_declaration[0][0]")
+
+		
+
+		GPL_END_BLOCK()
+	}
+
+                                T_LPAREN animation_parameter T_RPAREN
 	{
 		try
 		{
@@ -852,6 +893,8 @@ animation_block:
 animation_parameter:
     object_type T_ID
 	{
+		GPL_BEGIN_BLOCK("animation_parameter[0]")
+
 		std::string param_name(*$2);
 		delete $2;
 
@@ -859,7 +902,7 @@ animation_parameter:
 		bool bIsArray;
 		if(is_symbol_defined(param_name, &bIsArray))
 		{
-			throw previously_declared_variable(param_name);
+			throw animation_parameter_not_unique(param_name);
 		}
 
 		std::shared_ptr<Game_object> pObj;
@@ -891,6 +934,8 @@ animation_parameter:
 		std::shared_ptr<IValue> pval(new GPLVariant(pObj));
 		InsertSymbol(param_name, GAME_OBJECT, pval);
 		$$ = new std::string(param_name);
+
+		GPL_END_BLOCK()
 	}
     ;
 
