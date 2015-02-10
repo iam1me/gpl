@@ -6,7 +6,7 @@
 #include "symbol.h"
 using namespace std;
 
-Animation_block::Animation_block(Symbol *parameter_symbol, string name)
+Animation_block::Animation_block(std::shared_ptr<Symbol> parameter_symbol, string name)
 {
   m_name = name;
   m_parameter_symbol = parameter_symbol;
@@ -24,13 +24,13 @@ bool Animation_block::complete()
   return false; // this line is temporary until you implement function
 }
 
-void Animation_block::execute(Game_object *argument)
+void Animation_block::execute(Game_object* argument)
 {
   // you have to implement this as part of p8
 }
 
 std::ostream& Animation_block::print(std::ostream &os) const
 {
-	os << "Animation_block::print()\n";
+	//os << "Animation_block::print()\n";
 	return os;
 }

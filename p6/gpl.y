@@ -167,11 +167,11 @@ inline std::shared_ptr<Symbol> get_symbol(std::string name, bool* bIsArray)
 %token <union_type> T_INT                 "int"
 %token <union_type> T_DOUBLE              "double"
 %token <union_type> T_STRING              "string"
-%token T_TRIANGLE            "triangle"
-%token T_PIXMAP              "pixmap"
-%token T_CIRCLE              "circle"
-%token T_RECTANGLE           "rectangle"
-%token T_TEXTBOX             "textbox"
+%token T_TRIANGLE            "Triangle"
+%token T_PIXMAP              "Pixmap"
+%token T_CIRCLE              "Circle"
+%token T_RECTANGLE           "Rectangle"
+%token T_TEXTBOX             "Textbox"
 %token <union_int> T_FORWARD "forward" // value is line number
 %token T_INITIALIZATION      "initialization" 
 
@@ -356,6 +356,7 @@ inline std::shared_ptr<Symbol> get_symbol(std::string name, bool* bIsArray)
 %type <union_parameter> parameter
 %type <union_parameter_list> parameter_list
 %type <union_parameter_list> parameter_list_or_empty
+%type <union_string> animation_parameter
 
 %%
 /*********************************************
@@ -716,9 +717,43 @@ parameter:
 forward_declaration:
     T_FORWARD T_ANIMATION T_ID T_LPAREN animation_parameter T_RPAREN
 	{
-		if(!$3) YYABORT;
-		//free the ID
-		delete $3;
+		try
+		{
+			std::string anim_name(*$3);
+			delete $3;
+
+			std::string param_name(*$5);
+			delete $5;
+
+			std::shared_ptr<Symbol> pObjSymbol = Symbol_table::instance()->find_symbol(param_name);
+			if(!pObjSymbol || (pObjSymbol->get_type() != GAME_OBJECT))
+			{
+				throw std::logic_error("Expected Game Object as Animation Block Parameter");
+			}
+
+			bool bIsArray;
+			if(is_symbol_defined(anim_name, &bIsArray))
+			{
+				throw previously_declared_variable(anim_name);
+			}
+				
+			std::shared_ptr<Animation_block> pAnim(new Animation_block(pObjSymbol, anim_name));	
+			std::shared_ptr<IValue>pVal (new GPLVariant(pAnim));
+			InsertSymbol(anim_name, ANIMATION_BLOCK, pVal);
+		}
+		catch(const gpl_exception& ex)
+		{
+			ex.write_exception();
+		}
+		catch(const std::exception& ex)
+		{
+			TRACE_ERROR("std::exception what(): " << ex.what())
+			undefined_error().write_exception();
+		}
+		catch(...)
+		{
+			undefined_error().write_exception();
+		}
 	}
     ;
 
@@ -753,8 +788,42 @@ animation_block:
 animation_parameter:
     object_type T_ID
 	{
-		//free the ID
+		std::string param_name(*$2);
 		delete $2;
+
+		// Check to see if the Symbol exists
+		bool bIsArray;
+		if(is_symbol_defined(param_name, &bIsArray))
+		{
+			throw previously_declared_variable(param_name);
+		}
+
+		std::shared_ptr<Game_object> pObj;
+		switch($1)
+		{
+			case TRIANGLE:
+				pObj.reset(new Triangle());
+				break;
+			case RECTANGLE:
+				pObj.reset(new Rectangle());
+				break;
+			case CIRCLE:
+				pObj.reset(new Circle());
+				break;
+			case PIXMAP:
+				pObj.reset(new Pixmap());
+				break;
+			case TEXTBOX:
+				pObj.reset(new Textbox());
+				break;
+			default:
+				throw std::invalid_argument("Unsupported Object Type: " 
+					+ game_object_type_to_string($1));
+		}
+
+		std::shared_ptr<IValue> pval(new GPLVariant(pObj));
+		InsertSymbol(param_name, GAME_OBJECT, pval);
+		$$ = new std::string(param_name);
 	}
     ;
 

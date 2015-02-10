@@ -67,17 +67,21 @@ std::ostream& Symbol::print(std::ostream& os) const
 	os << gpl_type_to_string(type);
 	os << " " + _name;
 
-	if(type == STRING)
+	if(type & STRING)
 	{
 		// Put quotes around string literals
 		os << " \"" + to_string() + "\"";
 	}
-	else if(type & (GAME_OBJECT | ANIMATION_BLOCK))
+	else if(type & GAME_OBJECT)
 	{
 		os << std::endl;
 		indent++;
 		os << to_string();
 		indent--;
+	}
+	else if(type & ANIMATION_BLOCK)
+	{
+		os << to_string();
 	}
 	else
 	{

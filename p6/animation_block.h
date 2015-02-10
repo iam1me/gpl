@@ -28,10 +28,10 @@
 class Animation_block : public Statement_block
 {
   public:
-    Animation_block(Symbol *parameter_symbol, std::string name);
-    void execute(Game_object *argument);
+    Animation_block(std::shared_ptr<Symbol> parameter_symbol, std::string name);
+    void execute(Game_object* argument);
 
-    Symbol *get_parameter_symbol() {return m_parameter_symbol;}
+    std::shared_ptr<Symbol> get_parameter_symbol() {return m_parameter_symbol;}
 
     std::string name() {return m_name;}
 
@@ -41,14 +41,8 @@ class Animation_block : public Statement_block
     std::ostream &print(std::ostream &os) const;
 
   private:
-
-    Symbol *m_parameter_symbol;
+    std::shared_ptr<Symbol> m_parameter_symbol;
     std::string m_name;
-
-    // disable default copy constructor and default assignment
-    // done as a precaution, they should never be called
-    Animation_block(const Game_object &);
-    const Animation_block &operator=(const Game_object &);
 };
 
 #endif // #ifndef ANIMATION_BLOCK_H
