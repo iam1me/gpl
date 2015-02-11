@@ -529,3 +529,4 @@ ostream & operator<<(ostream &os, const Game_object *game_object)
   }
   else return game_object->print(os);
 }
+

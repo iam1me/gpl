@@ -283,4 +283,5 @@ class Game_object
 std::ostream &operator<<(std::ostream &os, const Game_object &game_object);
 std::ostream &operator<<(std::ostream &os, const Game_object *game_object);
 
+
 #endif // #ifndef GAME_OBJECT_H

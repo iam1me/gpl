@@ -374,7 +374,7 @@ inline std::shared_ptr<Symbol> get_symbol(std::string name, bool* bIsArray)
 %type <union_parameter> parameter
 %type <union_parameter_list> parameter_list
 %type <union_parameter_list> parameter_list_or_empty
-%type <union_string> animation_parameter
+%type <union_parameter> animation_parameter
 
 %%
 /*********************************************
@@ -811,54 +811,53 @@ parameter:
 
 //---------------------------------------------------------------------
 forward_declaration:
-    T_FORWARD T_ANIMATION T_ID
+    T_FORWARD T_ANIMATION T_ID T_LPAREN animation_parameter T_RPAREN
 	{
-		GPL_BEGIN_BLOCK("forward_declaration[0][0]")
+		GPL_BEGIN_BLOCK("forward_declaration")
 
-		
-
-		GPL_END_BLOCK()
-	}
-
-                                T_LPAREN animation_parameter T_RPAREN
-	{
-		try
-		{
 			std::string anim_name(*$3);
 			delete $3;
 
-			std::string param_name(*$5);
-			delete $5;
-
-			std::shared_ptr<Symbol> pObjSymbol = Symbol_table::instance()->find_symbol(param_name);
-			if(!pObjSymbol || (pObjSymbol->get_type() != GAME_OBJECT))
-			{
-				throw std::logic_error("Expected Game Object as Animation Block Parameter");
-			}
-
+			std::shared_ptr<AnimationParameter> pParam((AnimationParameter*)$5);
+			
+			// Check to make sure the animation ID is available
 			bool bIsArray;
 			if(is_symbol_defined(anim_name, &bIsArray))
 			{
 				throw previously_declared_variable(anim_name);
 			}
+
+			std::shared_ptr<Symbol> pObjSymbol = 
+				std::static_pointer_cast<Symbol>(pParam->get_expr()->eval());
+
+			std::string object_name = ((Symbol*)pObjSymbol.get())->get_name();
+
+			// Check to make sure the animation parameter is of the right type
+			if(!pObjSymbol || (pObjSymbol->get_type() != GAME_OBJECT))
+			{
+				throw object_type_mismatch(anim_name, object_name);
+			}
+
+			// Check to make sure that the animation parameter ID is available
+			if(is_symbol_defined(object_name, &bIsArray))
+			{
+				throw animation_parameter_not_unique(object_name);
+			}
+		
+			// Register the Symbol & set its value
+			bool result = Symbol_table::instance()->insert_symbol(pObjSymbol);
+			if(!result)
+			{
+				TRACE_ERROR("Insert Symbol failed despite Symbol having a unique name")
+				throw undefined_error();
+			}
 				
+			// Create and register the animation block
 			std::shared_ptr<Animation_block> pAnim(new Animation_block(pObjSymbol, anim_name));	
 			std::shared_ptr<IValue>pVal (new GPLVariant(pAnim));
 			InsertSymbol(anim_name, ANIMATION_BLOCK, pVal);
-		}
-		catch(const gpl_exception& ex)
-		{
-			ex.write_exception();
-		}
-		catch(const std::exception& ex)
-		{
-			TRACE_ERROR("std::exception what(): " << ex.what())
-			undefined_error().write_exception();
-		}
-		catch(...)
-		{
-			undefined_error().write_exception();
-		}
+
+		GPL_END_BLOCK()
 	}
     ;
 
@@ -898,42 +897,7 @@ animation_parameter:
 		std::string param_name(*$2);
 		delete $2;
 
-		// Check to see if the Symbol exists
-		bool bIsArray;
-		if(is_symbol_defined(param_name, &bIsArray))
-		{
-			throw animation_parameter_not_unique(param_name);
-		}
-
-		std::shared_ptr<Game_object> pObj;
-		switch($1)
-		{
-			case TRIANGLE:
-				pObj.reset(new Triangle());
-				break;
-			case RECTANGLE:
-				pObj.reset(new Rectangle());
-				break;
-			case CIRCLE:
-				pObj.reset(new Circle());
-				break;
-			case PIXMAP:
-				pObj.reset(new Pixmap());
-				break;
-			case TEXTBOX:
-				pObj.reset(new Textbox());
-				break;
-			default:
-				throw std::invalid_argument("Unsupported Object Type: " 
-					+ game_object_type_to_string($1));
-		}
-
-		pObj->never_animate();
-		pObj->never_draw();
-
-		std::shared_ptr<IValue> pval(new GPLVariant(pObj));
-		InsertSymbol(param_name, GAME_OBJECT, pval);
-		$$ = new std::string(param_name);
+		$$ = AnimationParameter::Create($1, param_name);
 
 		GPL_END_BLOCK()
 	}

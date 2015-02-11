@@ -12,6 +12,7 @@
 #define GPL_TYPE_H
 
 #include <iostream> // so we can declare operator<<
+#include <memory>
 
 // assign powers of 2 so that bitwise operations can be used
 enum Gpl_type {INT = 1,

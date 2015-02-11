@@ -1,3 +1,4 @@
+#include <memory>
 #include "gpl_type.h"
 #include "gpl_assert.h"
 using namespace std;
@@ -97,3 +98,4 @@ std::string game_object_type_to_string(Game_object_type type)
 	assert(false);
 	return "";
 }
+
