@@ -20,7 +20,7 @@ private:
 	int _line;
 };
 
-class statement_block : gpl_statement
+class statement_block : public gpl_statement
 {
 public:
 	statement_block(int line);
@@ -80,27 +80,31 @@ private:
 class assign_statement : public gpl_statement
 {
 public:
-	assign_statement(int line, std::shared_ptr<IExpression> pLHS, Operator_type type,
-		std::shared_ptr<IExpression> pRHS);
+	assign_statement(int line, std::shared_ptr<IExpression> pLHS, 
+						Assignment_type assign_oper,
+				std::shared_ptr<IExpression> pRHS);
+
 	virtual ~assign_statement() {};
 	virtual void execute();
 private:
 	std::shared_ptr<IExpression> _pLHS, _pRHS;
-	Operator_type _operator;	
+	Assignment_type _operator;
+	Gpl_type _assign_type;	
 };
 
 class for_statement : public gpl_statement
 {
 public:
-	for_statement(int line, std::shared_ptr<IExpression> pCondition,
-		std::shared_ptr<statement_block> pinitialization_block,
-		std::shared_ptr<statement_block> pincrement_block,
-		std::shared_ptr<statement_block> pbody_block);
+	for_statement(int line, const std::shared_ptr<assign_statement>& pInit,
+		const std::shared_ptr<IExpression>& pCondition,
+		const std::shared_ptr<assign_statement>& pIncrement,
+		const std::shared_ptr<statement_block>& pBody);
 	virtual ~for_statement() {};
 	virtual void execute();
 private:
 	std::shared_ptr<IExpression> _pCondition;
-	std::shared_ptr<statement_block> _pInit, _pIncrement, _pBody;
+	std::shared_ptr<gpl_statement> _pInit, _pIncrement;
+	std::shared_ptr<statement_block>  _pBody;
 };
 
 

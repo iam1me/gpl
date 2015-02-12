@@ -29,12 +29,9 @@ public:
 	Symbol(const std::string& name, const Gpl_type& type); // uninitialized symbol
 	virtual ~Symbol();
 
-	const std::string& get_name() const;
-
 	virtual std::ostream& print(std::ostream& os) const;
 
 private:
-	std::string _name;
 	bool _bInitialized;
 };
 
@@ -59,6 +56,8 @@ public:
 	virtual ConversionStatus set_string(const std::string&);
 	virtual ConversionStatus set_game_object(const std::shared_ptr<Game_object>&);
 	virtual ConversionStatus set_animation_block(const std::shared_ptr<Animation_block>&);
+
+	virtual const std::string& get_name() { return _pSymbol->get_name(); };
 	
 private:
 	std::shared_ptr<Symbol> _pSymbol;
@@ -90,10 +89,12 @@ public:
 	virtual ConversionStatus set_game_object(const std::shared_ptr<Game_object>&);
 	virtual ConversionStatus set_animation_block(const std::shared_ptr<Animation_block>&);	
 
+	virtual const std::string& get_name() { return _full_name; };
+
 private:
 	std::shared_ptr<Game_object> _pObj;
 	std::shared_ptr<Symbol> _pSymbol;
-	std::string _member_name;
+	std::string _member_name, _full_name;
 	Gpl_type _member_type;
 };
 

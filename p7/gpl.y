@@ -26,6 +26,7 @@ extern int line_count;            // current line in the input; from record.l
 #include "circle.h"
 #include "pixmap.h"
 #include "textbox.h"
+#include "gpl_statement.h"
 %}
 
 %union 
@@ -44,6 +45,9 @@ extern int line_count;            // current line in the input; from record.l
 
 	Parameter*		union_parameter;
 	ParameterList*		union_parameter_list;
+
+	gpl_statement*		union_statement;
+	statement_block*	union_statement_block;
 }
 
 %{
@@ -375,7 +379,15 @@ inline std::shared_ptr<Symbol> get_symbol(std::string name, bool* bIsArray)
 %type <union_parameter_list> parameter_list
 %type <union_parameter_list> parameter_list_or_empty
 %type <union_parameter> animation_parameter
-
+%type <union_statement> statement
+%type <union_statement> if_statement
+%type <union_statement> for_statement
+%type <union_statement> assign_statement
+%type <union_statement> print_statement
+%type <union_statement> exit_statement
+%type <union_statement_block> statement_list
+%type <union_statement_block> statement_block
+%type <union_statement_block> if_block
 %%
 /*********************************************
 	G R A M M A R  R U L E S
@@ -882,12 +894,51 @@ initialization_block:
 
 //---------------------------------------------------------------------
 animation_block:
-    T_ANIMATION T_ID T_LPAREN check_animation_parameter T_RPAREN T_LBRACE { } statement_list T_RBRACE end_of_statement_block
+	T_ANIMATION T_ID T_LPAREN animation_parameter T_RPAREN T_LBRACE statement_list T_RBRACE
 	{
-		//free the ID
+		GPL_BEGIN_BLOCK("animation_block")
+
+		// Grab the important bits of data from the above
+		std::string anim_name(*$2);
 		delete $2;
+
+		std::shared_ptr<AnimationParameter> pParam((AnimationParameter*)$4);
+		std::shared_ptr<statement_block> pBlock($7);
+
+		// Check to see if we provided an forward statement
+		std::shared_ptr<Symbol> pAnimSymbol = Symbol_table::instance()->find_symbol(anim_name);
+		if(!pAnimSymbol)
+		{
+			throw animation_forward_expected(anim_name);
+		}
+
+		// Confirm that this is, in fact, an animation block
+		std::shared_ptr<Animation_block> pAnim;
+		if(pAnimSymbol->get_animation_block(pAnim) == CONVERSION_ERROR)
+		{
+			throw undefined_error();
+		}
+
+		// Confirm that the animation block signature matches that of the forward
+		std::shared_ptr<Symbol> pForwardParamSymbol = pAnim->get_parameter_symbol();
+		if(pForwardParamSymbol->get_name().compare(pParam->get_game_object_name()) != 0
+			|| pForwardParamSymbol->get_type() != pParam->get_game_object_type())
+		{
+			throw animation_parameter_invalid();
+		}
+	
+		// Transfer all of the statements from the generic symbol block to 
+		// this animation_block
+		for(int i = 0; i < pBlock->get_count(); i++)
+		{
+			pAnim->insert_statement(pBlock->get_statement(i));
+		}	
+
+		GPL_END_BLOCK()
 	}
     ;
+
+    //T_ANIMATION T_ID T_LPAREN check_animation_parameter T_RPAREN T_LBRACE { } statement_list T_RBRACE end_of_statement_block
 
 //---------------------------------------------------------------------
 animation_parameter:
@@ -905,7 +956,7 @@ animation_parameter:
     ;
 
 //---------------------------------------------------------------------
-check_animation_parameter:
+/*check_animation_parameter:
     T_TRIANGLE T_ID
 	{
 		delete $2; // free the ID
@@ -927,6 +978,7 @@ check_animation_parameter:
 		delete $2; // free the ID
 	}
     ;
+*/
 
 //---------------------------------------------------------------------
 on_block:
@@ -962,66 +1014,157 @@ keystroke:
 
 //---------------------------------------------------------------------
 if_block:
-    statement_block_creator statement end_of_statement_block
-    | statement_block
+    statement_block
+	{
+		GPL_BEGIN_BLOCK("if_block[0]")
+		$$ = $1;
+		GPL_END_BLOCK()
+	}
+    | empty
+	{
+		GPL_BEGIN_BLOCK("if_block[1]")
+		$$ = new statement_block(line_count);
+		GPL_END_BLOCK()
+	}
     ;
 
+   // statement_block_creator statement end_of_statement_block
 //---------------------------------------------------------------------
 statement_block:
-    T_LBRACE statement_block_creator statement_list T_RBRACE end_of_statement_block
+    T_LBRACE statement_list T_RBRACE
+	{
+		$$ = $2;
+	}
     ;
 
-//---------------------------------------------------------------------
-statement_block_creator:
-    // this goes to nothing so that you can put an action here in p7
-    ;
+// T_LBRACE statement_block_creator statement_list T_RBRACE end_of_statement_block
 
 //---------------------------------------------------------------------
-end_of_statement_block:
+//statement_block_creator:
     // this goes to nothing so that you can put an action here in p7
-    ;
+//    ;
+
+//---------------------------------------------------------------------
+//end_of_statement_block:
+    // this goes to nothing so that you can put an action here in p7
+   // ;
 
 //---------------------------------------------------------------------
 statement_list:
     statement_list statement
+	{
+		std::shared_ptr<gpl_statement> pStatement($2);
+		$1->insert_statement(pStatement);
+		$$ = $1;
+	}
     | empty
+	{
+		$$ = new statement_block(line_count);
+	}
     ;
 
 //---------------------------------------------------------------------
 statement:
     if_statement
+	{ $$ = $1; }
     | for_statement
+	{ $$ = $1; }
     | assign_statement T_SEMIC
+	{ $$ = $1; }
     | print_statement T_SEMIC
+	{ $$ = $1; }
     | exit_statement T_SEMIC
+	{ $$ = $1; }
     ;
 
 //---------------------------------------------------------------------
 if_statement:
     T_IF T_LPAREN expression T_RPAREN if_block %prec IF_NO_ELSE
+	{
+		GPL_BEGIN_BLOCK("if_statement (no else)")
+		std::shared_ptr<IExpression> pCondition($3);
+		std::shared_ptr<gpl_statement> pThen($5);
+		$$ = new if_statement(line_count, pCondition, pThen);
+		GPL_END_BLOCK()
+	}
     | T_IF T_LPAREN expression T_RPAREN if_block T_ELSE if_block %prec IF_ELSE
+	{
+		GPL_BEGIN_BLOCK("if_statement + else")
+		std::shared_ptr<IExpression> pCondition($3);
+		std::shared_ptr<gpl_statement> pThen($5);
+		std::shared_ptr<gpl_statement> pElse($7);
+		$$ = new if_statement(line_count, pCondition, pThen, pElse);
+		GPL_END_BLOCK()
+	}
     ;
 
 //---------------------------------------------------------------------
 for_statement:
-    T_FOR T_LPAREN statement_block_creator assign_statement end_of_statement_block T_SEMIC expression T_SEMIC statement_block_creator assign_statement end_of_statement_block T_RPAREN statement_block
+	T_FOR T_LPAREN assign_statement T_SEMIC expression T_SEMIC assign_statement T_RPAREN statement_block
+	{
+		GPL_BEGIN_BLOCK("for statement")
+
+		std::shared_ptr<assign_statement> init((assign_statement*)$3);
+		std::shared_ptr<IExpression> cond_expr($5);
+		std::shared_ptr<assign_statement> incr((assign_statement*)$7);
+		std::shared_ptr<statement_block> body_block($9);
+
+		$$ = new for_statement(line_count, init, cond_expr, incr, body_block);
+
+		GPL_END_BLOCK()
+	}
     ;
+
+//    T_FOR T_LPAREN statement_block_creator assign_statement end_of_statement_block T_SEMIC expression T_SEMIC statement_block_creator assign_statement end_of_statement_block T_RPAREN statement_block
 
 //---------------------------------------------------------------------
 print_statement:
-    T_PRINT T_LPAREN expression T_RPAREN %prec SUB_EXPR_OPS
+    T_PRINT T_LPAREN expression T_RPAREN
+	{
+		GPL_BEGIN_BLOCK("print_statement")
+		std::shared_ptr<IExpression> print_expr($3);
+		$$ = new print_statement(line_count, print_expr);
+		GPL_END_BLOCK()
+	}
     ;
 
 //---------------------------------------------------------------------
 exit_statement:
-    T_EXIT T_LPAREN expression T_RPAREN %prec SUB_EXPR_OPS
+    T_EXIT T_LPAREN expression T_RPAREN
+	{
+		GPL_BEGIN_BLOCK("exit_statement")
+		std::shared_ptr<IExpression> exit_expr($3);
+		$$ = new exit_statement(line_count, exit_expr);
+		GPL_END_BLOCK()
+	}
     ;
 
 //---------------------------------------------------------------------
 assign_statement:
     variable T_ASSIGN expression 
+	{
+		GPL_BEGIN_BLOCK("assign_statement '='")
+		std::shared_ptr<IExpression> var_expr($1);
+		std::shared_ptr<IExpression> val_expr($3);
+		$$ = new assign_statement(line_count, var_expr, ASSIGN, val_expr);
+		GPL_END_BLOCK()
+	}
     | variable T_PLUS_ASSIGN expression
+	{
+		GPL_BEGIN_BLOCK("assign_statement '+='")
+		std::shared_ptr<IExpression> var_expr($1);
+		std::shared_ptr<IExpression> val_expr($3);
+		$$ = new assign_statement(line_count, var_expr, ADD_ASSIGN, val_expr);
+		GPL_END_BLOCK()
+	}
     | variable T_MINUS_ASSIGN expression
+	{
+		GPL_BEGIN_BLOCK("assign statement '-='")
+		std::shared_ptr<IExpression> var_expr($1);
+		std::shared_ptr<IExpression> val_expr($3);
+		$$ = new assign_statement(line_count, var_expr, SUBTRACT_ASSIGN, val_expr);
+		GPL_END_BLOCK()
+	}
     ;
 
 //---------------------------------------------------------------------

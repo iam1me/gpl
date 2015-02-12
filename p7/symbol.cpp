@@ -12,38 +12,38 @@
 Symbol::Symbol(const std::string& name, const int& val)
 	: GPLVariant(val, false)
 {
-	_name = name;
+	set_name(name);
 }
 
 Symbol::Symbol(const std::string& name, const double& val)
 	: GPLVariant(val, false)
 {
-	_name = name;
+	set_name(name);
 }
 
 Symbol::Symbol(const std::string& name, const std::string& val)
 	: GPLVariant(val, false)
 {
 	TRACE_VERBOSE("Symbol::Symbol('" << name << "', '" << val << "')")
-	_name = name;
+	set_name(name);
 }
 
 Symbol::Symbol(const std::string& name, const std::shared_ptr<Game_object>& val)
 	: GPLVariant(val, false)
 {
-	_name = name;
+	set_name(name);
 }
 
 Symbol::Symbol(const std::string& name, const std::shared_ptr<Animation_block>& val)
 	: GPLVariant(val, false)
 {
-	_name = name;
+	set_name(name);
 }
 
 Symbol::Symbol(const std::string& name, const Gpl_type& type)
 	: GPLVariant(type, false)
 {
-	_name = name;
+	set_name(name);
 }
 
 Symbol::Symbol(const std::string& name, const Gpl_type& type, const std::shared_ptr<IValue>& pval)
@@ -51,16 +51,11 @@ Symbol::Symbol(const std::string& name, const Gpl_type& type, const std::shared_
 {
 	TRACE_VERBOSE("Symbol::Symbol(" << name << ", " << gpl_type_to_string(type) 
 				<< ", " << pval->to_string() << ")");
-	_name = name;
+	set_name(name);
 }
 
 Symbol::~Symbol()
 {
-}
-
-const std::string& Symbol::get_name() const
-{
-	return _name;
 }
 
 std::ostream& Symbol::print(std::ostream& os) const
@@ -188,6 +183,7 @@ MemberReference::MemberReference(std::string symbol_name, std::string member_nam
 
 	set_type(member_type);
 	set_is_constant(_pSymbol->is_constant());
+	_full_name = symbol_name + "." + member_name;
 }
 
 MemberReference::MemberReference(std::shared_ptr<Symbol> symbol, std::string member_name)
@@ -219,6 +215,7 @@ MemberReference::MemberReference(std::shared_ptr<Symbol> symbol, std::string mem
 
 	set_type(member_type);
 	set_is_constant(_pSymbol->is_constant());
+	_full_name = symbol_name + "." + member_name;
 }
 
 MemberReference::~MemberReference()

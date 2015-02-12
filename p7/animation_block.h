@@ -29,6 +29,7 @@ class Animation_block : public statement_block
 {
   public:
     Animation_block(int line, std::shared_ptr<Symbol> parameter_symbol, std::string name);
+
     void execute(Game_object* argument);
 
     std::shared_ptr<Symbol> get_parameter_symbol() {return m_parameter_symbol;}

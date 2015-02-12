@@ -194,14 +194,6 @@ public:
 	virtual ~object_type_mismatch() {};
 };
 
-class animation_parameter_not_unique : public gpl_exception
-{
-public:
-	animation_parameter_not_unique(std::string param_name)
-		: gpl_exception(Error::ANIMATION_PARAMETER_NAME_NOT_UNIQUE, param_name) {};
-	virtual ~animation_parameter_not_unique() {};
-};
-
 
 class invalid_if_expression : public gpl_exception
 {
@@ -237,4 +229,65 @@ public:
 		: gpl_exception(Error::EXIT_STATUS_MUST_BE_AN_INTEGER) {};
 	virtual ~invalid_exit_expression() {};
 };
+
+class animation_body_expected : public gpl_exception
+{
+public:
+	animation_body_expected(std::string anim_name)
+		: gpl_exception(Error::NO_BODY_PROVIDED_FOR_FORWARD, anim_name) {};
+	virtual ~animation_body_expected() {};
+};
+
+class animation_forward_expected : public gpl_exception
+{
+public:
+	animation_forward_expected(std::string anim_name)
+		: gpl_exception(Error::NO_FORWARD_FOR_ANIMATION_BLOCK, anim_name) {};
+	virtual ~animation_forward_expected() {};
+};
+
+class animation_parameter_not_unique : public gpl_exception
+{
+public:
+	animation_parameter_not_unique(std::string param_name)
+		: gpl_exception(Error::ANIMATION_PARAMETER_NAME_NOT_UNIQUE, param_name) {};
+	virtual ~animation_parameter_not_unique() {};
+};
+
+class animation_parameter_invalid : public gpl_exception
+{
+public:
+	animation_parameter_invalid()
+		: gpl_exception(Error::ANIMATION_PARAM_DOES_NOT_MATCH_FORWARD)
+		 {};
+
+	virtual ~animation_parameter_invalid(){};
+};
+
+class invalid_assign_lhs : public gpl_exception
+{
+public:
+	invalid_assign_lhs(Assignment_type oper, std::string var_name, Gpl_type var_type)
+		: gpl_exception((oper == ASSIGN)? Error::INVALID_LHS_OF_ASSIGNMENT :
+				(oper == ADD_ASSIGN)? Error:: INVALID_LHS_OF_PLUS_ASSIGNMENT :
+				Error::INVALID_LHS_OF_MINUS_ASSIGNMENT, 
+				var_name, gpl_type_to_string(var_type))
+		{};
+
+	virtual ~invalid_assign_lhs() {};
+};
+
+class invalid_assign_rhs : public gpl_exception
+{
+public:
+	invalid_assign_rhs(Assignment_type oper, Gpl_type lhs_type, Gpl_type rhs_type)
+		: gpl_exception((oper == ASSIGN)? Error::ASSIGNMENT_TYPE_ERROR :
+				(oper == ADD_ASSIGN)? Error::PLUS_ASSIGNMENT_TYPE_ERROR :
+				Error::MINUS_ASSIGNMENT_TYPE_ERROR,
+				gpl_type_to_string(lhs_type), gpl_type_to_string(rhs_type))
+		{};
+
+	virtual ~invalid_assign_rhs() {};
+};
+
 #endif

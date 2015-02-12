@@ -55,4 +55,6 @@ enum Operator_type {PLUS, MINUS, MULTIPLY, DIVIDE, MOD,
 
 std::string operator_to_string(Operator_type op);
 
+enum Assignment_type { ASSIGN, ADD_ASSIGN, SUBTRACT_ASSIGN};
+
 #endif // #ifndef GPL_TYPE_H
