@@ -453,7 +453,7 @@ void Game_object::animate()
     // <this> to the execute function of the animation_block
 
 
-    if (!m_animation_block->empty())
+    if (m_animation_block->get_count() == 0)
       m_animation_block->execute(this);
     // else do nothing
 

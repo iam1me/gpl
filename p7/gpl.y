@@ -853,7 +853,8 @@ forward_declaration:
 			}
 				
 			// Create and register the animation block
-			std::shared_ptr<Animation_block> pAnim(new Animation_block(pObjSymbol, anim_name));	
+			std::shared_ptr<Animation_block> pAnim(
+				new Animation_block(line_count, pObjSymbol, anim_name));	
 			std::shared_ptr<IValue>pVal (new GPLVariant(pAnim));
 			InsertSymbol(anim_name, ANIMATION_BLOCK, pVal);
 

@@ -7,6 +7,7 @@
 #include "value.h"
 #include "parser.h"
 #include "gpl_exception.h"
+#include "indent.h"
 
 Symbol::Symbol(const std::string& name, const int& val)
 	: GPLVariant(val, false)

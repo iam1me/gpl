@@ -6,7 +6,8 @@
 #include "symbol.h"
 using namespace std;
 
-Animation_block::Animation_block(std::shared_ptr<Symbol> parameter_symbol, string name)
+Animation_block::Animation_block(int line, std::shared_ptr<Symbol> parameter_symbol, string name)
+	: statement_block(line)
 {
   m_name = name;
   m_parameter_symbol = parameter_symbol;

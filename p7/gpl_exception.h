@@ -203,4 +203,38 @@ public:
 };
 
 
+class invalid_if_expression : public gpl_exception
+{
+public:
+	invalid_if_expression()
+		: gpl_exception(Error::INVALID_TYPE_FOR_IF_STMT_EXPRESSION) 
+		{};
+	virtual ~invalid_if_expression() {};
+};
+
+class invalid_for_expression : public gpl_exception
+{
+public:
+	invalid_for_expression()
+		: gpl_exception(Error::INVALID_TYPE_FOR_FOR_STMT_EXPRESSION)
+		{};
+	virtual ~invalid_for_expression() {};
+};
+
+class invalid_print_expression : public gpl_exception
+{
+public:
+	invalid_print_expression()
+		: gpl_exception(Error::INVALID_TYPE_FOR_PRINT_STMT_EXPRESSION)
+		{};
+	virtual ~invalid_print_expression() {};
+};
+
+class invalid_exit_expression : public gpl_exception
+{
+public:
+	invalid_exit_expression()
+		: gpl_exception(Error::EXIT_STATUS_MUST_BE_AN_INTEGER) {};
+	virtual ~invalid_exit_expression() {};
+};
 #endif
