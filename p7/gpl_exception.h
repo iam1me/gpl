@@ -225,8 +225,9 @@ public:
 class invalid_exit_expression : public gpl_exception
 {
 public:
-	invalid_exit_expression()
-		: gpl_exception(Error::EXIT_STATUS_MUST_BE_AN_INTEGER) {};
+	invalid_exit_expression(Gpl_type type)
+		: gpl_exception(Error::EXIT_STATUS_MUST_BE_AN_INTEGER,
+		  gpl_type_to_string(type)) {};
 	virtual ~invalid_exit_expression() {};
 };
 

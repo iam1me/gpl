@@ -140,7 +140,7 @@ exit_statement::exit_statement(int line, std::shared_ptr<IExpression> exit_expr)
 
 	if(exit_expr->get_type() != INT)
 	{
-		throw invalid_exit_expression();
+		throw invalid_exit_expression(exit_expr->get_type());
 	}	
 
 	_exit_expr = exit_expr;
@@ -156,6 +156,7 @@ void exit_statement::execute()
 		throw std::runtime_error("exit_statement::execute - CONVERSION_ERROR");
 	}
 
+	std::cout << "gpl[" << get_line() << "]: exit(" << result << ")" << std::endl;
 	exit(result);
 }
 
@@ -172,32 +173,32 @@ assign_statement::assign_statement(int line, std::shared_ptr<IVariableExpression
 	Gpl_type rhs_type = pRHS->get_type();
 
 	// if LHS is STRING, SUBTRACT_ASSIGN not supported
-	if((lhs_type & STRING) & (assign_oper & SUBTRACT_ASSIGN))
+	if((lhs_type == STRING) && (assign_oper == SUBTRACT_ASSIGN))
 		throw invalid_assign_lhs(assign_oper, pLHS->get_name(), lhs_type);
 
 	// if LHS is ANIMATION_BLOCK, only ASSIGN is supported
-	if((lhs_type & ANIMATION_BLOCK) & !(assign_oper & ASSIGN))
+	if((lhs_type == ANIMATION_BLOCK) && (assign_oper != ASSIGN))
 		throw invalid_assign_lhs(assign_oper, pLHS->get_name(), lhs_type);
 
 
 	// Can't assign a Game Object to another one
-	if(lhs_type & GAME_OBJECT) throw invalid_assign_rhs(assign_oper, lhs_type, rhs_type);
-	if(rhs_type & GAME_OBJECT) throw invalid_assign_rhs(assign_oper, lhs_type, rhs_type);
+	if(lhs_type == GAME_OBJECT) throw invalid_assign_lhs(assign_oper, pLHS->get_name(), lhs_type);
+	if(rhs_type == GAME_OBJECT) throw invalid_assign_rhs(assign_oper, lhs_type, rhs_type);
 
 	// If LHS is an INT, RHS must be an INT
-	if((lhs_type & INT) & !(rhs_type & INT))
+	if((lhs_type == INT) && !(rhs_type & INT))
 		throw invalid_assign_rhs(assign_oper, lhs_type, rhs_type);
 
 	// if LHS is a DOUBLE< RHS must be an INT|DOUBLE
-	if((lhs_type & DOUBLE) & !(rhs_type & (INT|DOUBLE)))
+	if((lhs_type & DOUBLE) && !(rhs_type & (INT|DOUBLE)))
 		throw invalid_assign_rhs(assign_oper, lhs_type, rhs_type);
 
 	// if LHS is a STRING, RHS must be a INT|DOUBLE|STRING
-	if((lhs_type & STRING) & !(rhs_type & (INT|DOUBLE|STRING)))
+	if((lhs_type & STRING) && !(rhs_type & (INT|DOUBLE|STRING)))
 		throw invalid_assign_rhs(assign_oper, lhs_type, rhs_type);
 
 	// if LHS is an ANIMATION_BLOCK, RHS must be an ANIMATION_BLOCK
-	if((lhs_type & ANIMATION_BLOCK) & !(rhs_type & ANIMATION_BLOCK))
+	if((lhs_type & ANIMATION_BLOCK) && !(rhs_type & ANIMATION_BLOCK))
 		throw invalid_assign_rhs(assign_oper, lhs_type, rhs_type);
 
 	_pLHS = pLHS;

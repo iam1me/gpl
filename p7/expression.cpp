@@ -131,7 +131,14 @@ std::shared_ptr<IValue> ArrayReferenceExpression::eval() const
 
 	if(!pSymbol)
 	{
-		throw index_out_of_bounds(get_name(), ndx);
+		index_out_of_bounds(get_name(), ndx).write_exception();
+		
+		//return array_name[0] instead
+		reference = get_name() + "[0]";
+		pSymbol = Symbol_table::instance()->find_symbol(reference);
+
+		if(!pSymbol) throw std::runtime_error("ArrayReferenceExpression::eval - Symbol '"
+					+ reference + "' Not Found");
 	}
 
 	TRACE_VERBOSE("ArrayReferenceExpression::eval() - Symbol found. Returning Reference")
@@ -212,7 +219,11 @@ std::shared_ptr<IValue> ArrayMemberReferenceExpression::eval() const
 	std::shared_ptr<Symbol> pSymbol = Symbol_table::instance()->find_symbol(ref_name);
 	if(!pSymbol)
 	{
-		throw index_out_of_bounds(_array_name, ndx);
+		index_out_of_bounds(_array_name, ndx).write_exception();
+		
+		ref_name = _array_name + "[0]";
+		pSymbol = Symbol_table::instance()->find_symbol(ref_name);
+		if(!pSymbol) throw std::runtime_error("ArrayMemberReferenceExpression - Array Not Found");
 	}
 	TRACE_VERBOSE("Symbol '" + ref_name + "' Found!")
 
@@ -633,6 +644,7 @@ std::shared_ptr<IValue> SinExpression::eval() const
 
 	double result;
 	pval1->get_double(result);
+
 	result = CONVERT_TO_RADIANS(result);
 	result = sin(result);
 
