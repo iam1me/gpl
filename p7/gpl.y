@@ -552,10 +552,12 @@ simple_type:
 optional_initializer:
     T_ASSIGN expression
 	{
+		TRACE_VERBOSE("optional_initializer[0]");
 		$$ = $2;
 	}
     | empty
 	{
+		TRACE_VERBOSE("optional_initializer[1] (empty)")
 		$$ = NULL;
 	}
     ;

@@ -46,7 +46,9 @@ GPLVariant::GPLVariant(Gpl_type type, const std::shared_ptr<IValue>& pval, bool 
 {
 	TRACE_VERBOSE("GPLVariant::GPLVariant(" << gpl_type_to_string(type) << ", "
 				<< pval->to_string() << ")")
+
 	ConversionStatus status;
+	_binit = false;
 	switch(type)
 	{
 		case INT:
@@ -75,7 +77,7 @@ GPLVariant::GPLVariant(Gpl_type type, const std::shared_ptr<IValue>& pval, bool 
 			status = pval->get_string(str);
 			if(status == CONVERSION_ERROR) break;
 		
-			TRACE_VERBOSE("GPLVariant::GPLVariant - calling set_string('" << str <<"')")
+			TRACE_VERBOSE("GPLVariant::GPLVariant - calling set_string(\"" << str <<"\")")
 			status = set_string(str);
 			break;
 		}
@@ -311,15 +313,21 @@ ConversionStatus GPLVariant::set_double(const double& val)
 
 ConversionStatus GPLVariant::set_string(const std::string& val)
 {
-	if(get_type() != STRING) return CONVERSION_ERROR;
+	if(get_type() != STRING) 
+	{
+		TRACE_ERROR("GPLVariant::set_string - Variant is not a STRING")
+		return CONVERSION_ERROR;
+	}
 
 	if(!_binit)
 	{
+		TRACE_VERBOSE("GPLVariant::set_string - Setting initial value");
 		_val_pstr = new std::string(val);
 		_binit = true;
 	}
 	else
 	{
+		TRACE_VERBOSE("GPLVariant::set_string - overwriting existin STRING value");
 		*_val_pstr = val;
 	}
 	return CONVERSION_NONE;
