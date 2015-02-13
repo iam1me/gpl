@@ -40,16 +40,6 @@ bool IValue::is_constant() const
 	return _is_const;
 }
 
-const std::string& IValue::get_name() const
-{
-	return _name;
-}
-
-void IValue::set_name(const std::string& name)
-{
-	_name = name;
-}
-
 ConversionStatus IValue::get_conversion_status(Gpl_type src_type, Gpl_type dest_type) const
 {
 	if(dest_type == src_type) return CONVERSION_NONE;

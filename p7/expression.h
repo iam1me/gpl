@@ -11,6 +11,7 @@
 //	F O R W A R D  D E F I N I T I O N S 
 //==================================================================
 class IExpression;
+class IVariableExpression;
 class ValueExpression;
 class ArrayReferenceExpression;
 class ArrayMemberReferenceExpression; //Implement later
@@ -85,13 +86,27 @@ private:
 	ExpressionList _children;
 };
 
+// For expressions that evaluate to specific variables
+class IVariableExpression : public IExpression
+{
+public:
+	virtual ~IVariableExpression() {};
+	virtual const std::string& get_name() const;
 
-// Holds a value. a Leaf node. Values maybe constants or direct references.
+protected:
+	IVariableExpression(const std::string& var_name);
+	void set_name(const std::string& name);
+
+private:
+	std::string _name;
+};
+
+// Holds a value. a Leaf node. Values should be used for constants, not Variables
 class ValueExpression : public IExpression
 {
 public: 
 	ValueExpression(std::shared_ptr<IValue>);
-	~ValueExpression();
+	virtual ~ValueExpression();
 
 	Gpl_type get_type() const;
 	std::shared_ptr<IValue> eval() const;
@@ -100,11 +115,10 @@ private:
 	std::shared_ptr<IValue> _pVal;	
 };
 
-
 // Upon evaluation, ReferenceExpression determines which symbol to address
 // and returns its value. This is used for calculating array references 
 // dynamically. For example: y = myarray[x + 1]; 
-class ArrayReferenceExpression : public IExpression
+class ArrayReferenceExpression : public IVariableExpression
 {
 public:
 	ArrayReferenceExpression(std::string array_name, 
@@ -112,17 +126,14 @@ public:
 	virtual ~ArrayReferenceExpression();
 
 	Gpl_type get_type() const;
-
 	std::shared_ptr<IValue> eval() const;
-	std::string get_arrayName() const;
 
 private:
 	std::shared_ptr<IValue> _pVal;
-	std::string _arrayName;
 	Gpl_type _type;
 };
 
-class ArrayMemberReferenceExpression : public IExpression
+class ArrayMemberReferenceExpression : public IVariableExpression
 {
 public:
 	ArrayMemberReferenceExpression(std::string array_name, std::string member_name,

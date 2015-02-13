@@ -38,7 +38,6 @@ public:
 	virtual ConversionStatus set_game_object(const std::shared_ptr<Game_object>&) = 0;
 	virtual ConversionStatus set_animation_block(const std::shared_ptr<Animation_block>&) = 0;	
 
-	virtual const std::string& get_name() const;
 	virtual std::string to_string() const;
 	virtual ConversionStatus get_conversion_status(Gpl_type dest_type, Gpl_type src_type) const;
 	
@@ -48,10 +47,29 @@ protected:
 
 	virtual void set_type(Gpl_type type);
 	virtual void set_is_constant(bool bConstant);
-	virtual void set_name(const std::string& name);
+
 private:
 	Gpl_type _type;
 	bool _is_const;
+};
+
+class IVariable : public IValue
+{
+public:
+	virtual const std::string& get_name() const
+		{ return _name; };
+
+protected:
+	IVariable(const std::string& name)
+		: IValue() { set_name(name); };
+
+	IVariable(const std::string& name, Gpl_type type) 	
+		: IValue(type, false) { set_name(name); };
+
+	virtual void set_name(const std::string& name)
+		{ _name = name; };
+
+private:
 	std::string _name;
 };
 

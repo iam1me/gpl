@@ -80,14 +80,15 @@ private:
 class assign_statement : public gpl_statement
 {
 public:
-	assign_statement(int line, std::shared_ptr<IExpression> pLHS, 
+	assign_statement(int line, std::shared_ptr<IVariableExpression> pLHS, 
 						Assignment_type assign_oper,
 				std::shared_ptr<IExpression> pRHS);
 
 	virtual ~assign_statement() {};
 	virtual void execute();
 private:
-	std::shared_ptr<IExpression> _pLHS, _pRHS;
+	std::shared_ptr<IVariableExpression> _pLHS;
+	std::shared_ptr<IExpression> _pRHS;
 	Assignment_type _operator;
 	Gpl_type _assign_type;	
 };

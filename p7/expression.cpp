@@ -40,6 +40,26 @@ void IExpression::add_child(std::shared_ptr<IExpression> child)
 	_children.push_back(child);
 }
 
+//================================================================
+
+IVariableExpression::IVariableExpression(const std::string& name)
+	: IExpression()
+{
+	set_name(name);
+}
+
+const std::string& IVariableExpression::get_name() const
+{
+	return _name;
+}
+
+void IVariableExpression::set_name(const std::string& name)
+{
+	_name = name;
+}
+
+//================================================================
+
 ValueExpression::ValueExpression(std::shared_ptr<IValue> val)
 	: IExpression()
 {
@@ -65,13 +85,13 @@ Gpl_type ValueExpression::get_type() const
 	return _pVal->get_type();
 }
 
+//============================================================
+
 ArrayReferenceExpression::ArrayReferenceExpression
 	(std::string array_name, std::shared_ptr<IExpression> ndx_expr)
-	: IExpression()
+	: IVariableExpression(array_name)
 {
-	_arrayName = array_name;
-
-	std::string reference = _arrayName + "[0]";
+	std::string reference = array_name + "[0]";
 	std::shared_ptr<Symbol> pSymbol = 
 			Symbol_table::instance()->find_symbol(reference);
 
@@ -103,7 +123,7 @@ std::shared_ptr<IValue> ArrayReferenceExpression::eval() const
 	int ndx;
 	ndx_val->get_int(ndx);
 
-	std::string reference = _arrayName + "[";
+	std::string reference = get_name() + "[";
 	reference += std::to_string(ndx) + "]";
 					
 	std::shared_ptr<Symbol> pSymbol = 
@@ -111,17 +131,12 @@ std::shared_ptr<IValue> ArrayReferenceExpression::eval() const
 
 	if(!pSymbol)
 	{
-		throw index_out_of_bounds(_arrayName, ndx);
+		throw index_out_of_bounds(get_name(), ndx);
 	}
 
 	TRACE_VERBOSE("ArrayReferenceExpression::eval() - Symbol found. Returning Reference")
-	std::shared_ptr<IValue> ret(new Reference(pSymbol));
+	std::shared_ptr<IValue> ret(pSymbol);
 	return ret;
-}
-
-std::string ArrayReferenceExpression::get_arrayName() const
-{
-	return _arrayName;
 }
 	
 Gpl_type ArrayReferenceExpression::get_type() const
@@ -131,7 +146,7 @@ Gpl_type ArrayReferenceExpression::get_type() const
 
 ArrayMemberReferenceExpression::ArrayMemberReferenceExpression(std::string array_name, 
 			std::string member_name, std::shared_ptr<IExpression> ndx_expr)
-	: IExpression()
+	: IVariableExpression(array_name + "." + member_name)
 {
 	TRACE_VERBOSE("ArrayMemberReference::ArrayMemberReference - Array: '" + array_name + "', "
 				+ "MemberName: '" + member_name + "'")

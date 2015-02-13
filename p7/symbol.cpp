@@ -10,48 +10,45 @@
 #include "indent.h"
 
 Symbol::Symbol(const std::string& name, const int& val)
-	: GPLVariant(val, false)
+	: IVariable(name, INT)
 {
-	set_name(name);
+	_pvar.reset(new GPLVariant(val, false));	
 }
 
 Symbol::Symbol(const std::string& name, const double& val)
-	: GPLVariant(val, false)
+	: IVariable(name, DOUBLE)
 {
-	set_name(name);
+	_pvar.reset(new GPLVariant(val, false));
 }
 
 Symbol::Symbol(const std::string& name, const std::string& val)
-	: GPLVariant(val, false)
+	: IVariable(name, STRING)
 {
-	TRACE_VERBOSE("Symbol::Symbol('" << name << "', '" << val << "')")
-	set_name(name);
+	_pvar.reset(new GPLVariant(val, false));
 }
 
 Symbol::Symbol(const std::string& name, const std::shared_ptr<Game_object>& val)
-	: GPLVariant(val, false)
+	: IVariable(name, GAME_OBJECT)
 {
-	set_name(name);
+	_pvar.reset(new GPLVariant(val, false));
 }
 
 Symbol::Symbol(const std::string& name, const std::shared_ptr<Animation_block>& val)
-	: GPLVariant(val, false)
+	: IVariable(name, ANIMATION_BLOCK)
 {
-	set_name(name);
+	_pvar.reset(new GPLVariant(val, false));
 }
 
 Symbol::Symbol(const std::string& name, const Gpl_type& type)
-	: GPLVariant(type, false)
+	: IVariable(name, type)
 {
-	set_name(name);
+	_pvar.reset(new GPLVariant(type, false));
 }
 
 Symbol::Symbol(const std::string& name, const Gpl_type& type, const std::shared_ptr<IValue>& pval)
-	: GPLVariant(type, pval,  false)
+	: IVariable(name, type)
 {
-	TRACE_VERBOSE("Symbol::Symbol(" << name << ", " << gpl_type_to_string(type) 
-				<< ", " << pval->to_string() << ")");
-	set_name(name);
+	_pvar.reset( new GPLVariant(type, pval,  false));
 }
 
 Symbol::~Symbol()
@@ -62,7 +59,7 @@ std::ostream& Symbol::print(std::ostream& os) const
 {
 	Gpl_type type = get_type();
 	os << gpl_type_to_string(type);
-	os << " " + _name;
+	os << " " + get_name();
 
 	if(type & STRING)
 	{
@@ -89,8 +86,39 @@ std::ostream& Symbol::print(std::ostream& os) const
 	return os;
 }
 
+ConversionStatus Symbol::get_int(int& val) const
+{ return _pvar->get_int(val); }
 
-Reference::Reference(std::shared_ptr<Symbol> pSymbol)
+ConversionStatus Symbol::get_double(double& val) const
+{ return _pvar->get_double(val); }
+
+ConversionStatus Symbol::get_string(std::string& val) const
+{ return _pvar->get_string(val); }
+
+ConversionStatus Symbol::get_game_object(std::shared_ptr<Game_object>& val) const
+{ return _pvar->get_game_object(val); }
+
+ConversionStatus Symbol::get_animation_block(std::shared_ptr<Animation_block>& val) const
+{ return _pvar->get_animation_block(val); }
+
+ConversionStatus Symbol::set_int(const int& val)
+{ return _pvar->set_int(val); }
+
+ConversionStatus Symbol::set_double(const double& val)
+{ return _pvar->set_double(val); }
+
+ConversionStatus Symbol::set_string(const std::string& val)
+{ return _pvar->set_string(val); }
+
+ConversionStatus Symbol::set_game_object(const std::shared_ptr<Game_object>& val)
+{ return _pvar->set_game_object(val); }
+
+ConversionStatus Symbol::set_animation_block(const std::shared_ptr<Animation_block>& val)
+{ return _pvar->set_animation_block(val); }
+
+//================================================================================
+
+/*Reference::Reference(std::shared_ptr<Symbol> pSymbol)
 	: IValue(pSymbol->get_type(), pSymbol->is_constant())
 {
 	if(!pSymbol) throw std::invalid_argument("ReferenceValue::ReferenceValue() - pSymbol is NULL");
@@ -148,14 +176,14 @@ ConversionStatus Reference::set_game_object(const std::shared_ptr<Game_object>& 
 ConversionStatus Reference::set_animation_block(const std::shared_ptr<Animation_block>& val)
 {
 	return _pSymbol->set_animation_block(val);
-}
+}*/
 
 
 //====================================================================================
 
 	
 MemberReference::MemberReference(std::string symbol_name, std::string member_name)
-	: IValue()
+	: IVariable(symbol_name + "." + member_name)
 {
 	_pSymbol = Symbol_table::instance()->find_symbol(symbol_name);
 	if(!_pSymbol)
@@ -187,7 +215,7 @@ MemberReference::MemberReference(std::string symbol_name, std::string member_nam
 }
 
 MemberReference::MemberReference(std::shared_ptr<Symbol> symbol, std::string member_name)
-	: IValue()
+	: IVariable(symbol->get_name() + "." + member_name)
 {
 	_pSymbol = symbol;
 	if(!_pSymbol)
@@ -370,5 +398,27 @@ ConversionStatus MemberReference::set_animation_block(const std::shared_ptr<Anim
 	}
 
 	return result;	
+}
+
+//========================================================================
+
+ReferenceExpression::ReferenceExpression(std::shared_ptr<IVariable> pVar)
+	: IVariableExpression(pVar->get_name())
+{
+	if(!pVar) throw std::invalid_argument("Variable is NULL");
+	_pRef = pVar;
+}
+
+Gpl_type ReferenceExpression::get_type() const
+{
+	return _pRef->get_type();
+}
+
+std::shared_ptr<IValue> ReferenceExpression::eval() const
+{
+	std::shared_ptr<IValue> pVal = std::dynamic_pointer_cast<IValue>(_pRef);
+	if(!pVal) throw undefined_error();
+
+	return pVal;
 }
 

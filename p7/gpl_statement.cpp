@@ -156,8 +156,8 @@ void exit_statement::execute()
 
 //===================================================================
 
-assign_statement::assign_statement(int line, std::shared_ptr<IExpression> pLHS, Assignment_type assign_oper,
-		std::shared_ptr<IExpression> pRHS)
+assign_statement::assign_statement(int line, std::shared_ptr<IVariableExpression> pLHS, 
+				Assignment_type assign_oper, std::shared_ptr<IExpression> pRHS)
 	: gpl_statement(line)
 {
 	if(!pLHS) throw std::invalid_argument("Left-Hand Expression is NULL");
@@ -165,9 +165,6 @@ assign_statement::assign_statement(int line, std::shared_ptr<IExpression> pLHS, 
 
 	Gpl_type lhs_type = pLHS->get_type();
 	Gpl_type rhs_type = pRHS->get_type();
-
-	// the LHS must be a variable, ie not constant
-	if(pLHS->is_constant()) throw invalid_assign_lhs(assign_oper, pLHS->get_name(), lhs_type);
 
 	// if LHS is STRING, SUBTRACT_ASSIGN not supported
 	if((lhs_type & STRING) & (assign_oper & SUBTRACT_ASSIGN))

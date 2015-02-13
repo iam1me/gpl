@@ -1144,7 +1144,7 @@ assign_statement:
     variable T_ASSIGN expression 
 	{
 		GPL_BEGIN_BLOCK("assign_statement '='")
-		std::shared_ptr<IExpression> var_expr($1);
+		std::shared_ptr<IVariableExpression> var_expr((IVariableExpression*)$1);
 		std::shared_ptr<IExpression> val_expr($3);
 		$$ = new assign_statement(line_count, var_expr, ASSIGN, val_expr);
 		GPL_END_BLOCK()
@@ -1152,7 +1152,7 @@ assign_statement:
     | variable T_PLUS_ASSIGN expression
 	{
 		GPL_BEGIN_BLOCK("assign_statement '+='")
-		std::shared_ptr<IExpression> var_expr($1);
+		std::shared_ptr<IVariableExpression> var_expr((IVariableExpression*)$1);
 		std::shared_ptr<IExpression> val_expr($3);
 		$$ = new assign_statement(line_count, var_expr, ADD_ASSIGN, val_expr);
 		GPL_END_BLOCK()
@@ -1160,7 +1160,7 @@ assign_statement:
     | variable T_MINUS_ASSIGN expression
 	{
 		GPL_BEGIN_BLOCK("assign statement '-='")
-		std::shared_ptr<IExpression> var_expr($1);
+		std::shared_ptr<IVariableExpression> var_expr((IVariableExpression*)$1);
 		std::shared_ptr<IExpression> val_expr($3);
 		$$ = new assign_statement(line_count, var_expr, SUBTRACT_ASSIGN, val_expr);
 		GPL_END_BLOCK()
@@ -1189,8 +1189,8 @@ variable:
 		}
 		else
 		{
-			std::shared_ptr<IValue> pVal(new Reference(pSymbol));
-			$$ = new ValueExpression(pVal);
+			std::shared_ptr<IVariable> pVar = std::dynamic_pointer_cast<IVariable>(pSymbol);
+			$$ = new ReferenceExpression(pVar);
 		}
 		GPL_END_EXPR_BLOCK($$)
 	}
@@ -1242,8 +1242,8 @@ variable:
 			throw undeclared_variable(obj_name);
 		}
 
-		std::shared_ptr<IValue> pval(new MemberReference(pSymbol, member_name));
-		$$ = new ValueExpression(pval);		
+		std::shared_ptr<IVariable> pvar(new MemberReference(pSymbol, member_name));
+		$$ = new ValueExpression(pvar);		
 
 		GPL_END_EXPR_BLOCK($$)
 	}
