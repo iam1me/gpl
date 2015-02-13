@@ -360,11 +360,11 @@ inline std::shared_ptr<Symbol> get_symbol(std::string name, bool* bIsArray)
 	than an if statement without an else
 *******************************************************/
 %token T_IF                  "if"
+%precedence IF_NO_ELSE T_IF
 %token T_FOR                 "for"
-%token T_ELSE                "else"
 
-%precedence IF_NO_ELSE		"if-then"
-%precedence IF_ELSE		"if-then-else"
+%token T_ELSE                "else"
+%precedence IF_ELSE T_ELSE
 
 // special token that does not match any production
 // used for characters that are not part of the language
@@ -944,7 +944,6 @@ animation_block:
 	}
     ;
 
-    //T_ANIMATION T_ID T_LPAREN check_animation_parameter T_RPAREN T_LBRACE { } statement_list T_RBRACE end_of_statement_block
 
 //---------------------------------------------------------------------
 animation_parameter:
@@ -960,31 +959,6 @@ animation_parameter:
 		GPL_END_BLOCK()
 	}
     ;
-
-//---------------------------------------------------------------------
-/*check_animation_parameter:
-    T_TRIANGLE T_ID
-	{
-		delete $2; // free the ID
-	}
-    | T_PIXMAP T_ID
-	{
-		delete $2; // free the ID
-	}
-    | T_CIRCLE T_ID
-	{
-		delete $2; // free the ID
-	}
-    | T_RECTANGLE T_ID
-	{
-		delete $2; // free the ID
-	}
-    | T_TEXTBOX T_ID
-	{
-		delete $2; // free the ID
-	}
-    ;
-*/
 
 //---------------------------------------------------------------------
 on_block:
@@ -1105,12 +1079,21 @@ if_block:
 		$$ = $1;
 		GPL_END_BLOCK()
 	}
-    | empty
+    | statement
 	{
 		GPL_BEGIN_BLOCK("if_block[1]")
+		std::shared_ptr<gpl_statement> statement($1);
 		$$ = new statement_block(line_count);
+		$$->insert_statement(statement);		
 		GPL_END_BLOCK()
 	}
+ 
+/*   | empty
+	{
+		GPL_BEGIN_BLOCK("if_block[2]")
+		$$ = new statement_block(line_count);
+		GPL_END_BLOCK()
+	}*/
     ;
 
    // statement_block_creator statement end_of_statement_block
@@ -1172,7 +1155,8 @@ if_statement:
 		$$ = new if_statement(line_count, pCondition, pThen);
 		GPL_END_BLOCK()
 	}
-    | T_IF T_LPAREN expression T_RPAREN if_block T_ELSE if_block %prec IF_ELSE
+    |
+    T_IF T_LPAREN expression T_RPAREN if_block T_ELSE if_block %prec IF_ELSE
 	{
 		GPL_BEGIN_BLOCK("if_statement + else")
 		std::shared_ptr<IExpression> pCondition($3);
