@@ -2,6 +2,7 @@
 #include <iostream>
 #include <memory>
 
+#include "parser.h"
 #include "gpl_statement.h"
 #include "gpl_exception.h"
 
@@ -24,8 +25,11 @@ statement_block::statement_block(int line)
 
 void statement_block::execute()
 {
+	TRACE_VERBOSE("statement_block::execute - There are " << _list.size() << " Statements")
+	int i = 0;
 	for(StatementList::iterator it = _list.begin(); it != _list.end(); it++)
 	{
+		TRACE_VERBOSE("Executing Statement #" << i++)
 		(*it)->execute();
 	}
 }
@@ -119,8 +123,9 @@ print_statement::print_statement(int line, std::shared_ptr<IExpression> prnt_exp
 
 void print_statement::execute()
 {
-	std::shared_ptr<IValue> pval = _prnt_expr->eval();
+	TRACE_VERBOSE("print_statement::execute()")
 
+	std::shared_ptr<IValue> pval = _prnt_expr->eval();
 	std::string print_string = pval->to_string();
 
 	std::cout << "gpl[" << get_line() << "]: " << print_string << std::endl;	
@@ -203,12 +208,12 @@ assign_statement::assign_statement(int line, std::shared_ptr<IVariableExpression
 
 void assign_statement::execute()
 {
-	// Evaluate the LHS & RHS, as necessary
-	std::shared_ptr<IValue> pLHS_Val;
-	std::shared_ptr<IValue> pRHS_Val = _pRHS->eval();
+	TRACE_VERBOSE("assign_statement::execute()")
+	TRACE_VERBOSE("\tvariable: " << _pLHS->get_name())
 
-	if(_operator != ASSIGN)
-		pLHS_Val = _pLHS->eval();
+	// Evaluate the LHS & RHS, as necessary
+	std::shared_ptr<IValue> pLHS_Val = _pLHS->eval();
+	std::shared_ptr<IValue> pRHS_Val = _pRHS->eval();
 
 	// Set the LHS to the above value
 	switch(_assign_type)
@@ -339,6 +344,8 @@ for_statement::for_statement(int line, const std::shared_ptr<assign_statement>& 
 
 void for_statement::execute()
 {
+	TRACE_VERBOSE("for_statement::execute")
+
 	// Run the Init Statement
 	_pInit->execute();
 

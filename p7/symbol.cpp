@@ -280,11 +280,21 @@ ConversionStatus MemberReference::get_double(double& val) const
 	ConversionStatus status = get_conversion_status(get_type(), DOUBLE);
 	if(status == CONVERSION_ERROR) return status;
 
-	Status member_status = _pObj->get_member_variable(_member_name, val);
+	Status member_status;
+	if(status == CONVERSION_UPCAST_DOUBLE)
+	{
+		int temp;
+		member_status = _pObj->get_member_variable(_member_name, temp);
+		val = (double)temp;
+	}
+	else
+	{
+		member_status = _pObj->get_member_variable(_member_name, val);
+	}
+
 	if(member_status != OK)
 	{
 		TRACE_ERROR("MemberReference::get_double() - Failed to retrieve member variable's value")
-		//throw std::runtime_error("MemberReference::get_double() - Failed to retrieve member variable's value");
 		return CONVERSION_ERROR;
 	}
 
@@ -294,14 +304,24 @@ ConversionStatus MemberReference::get_double(double& val) const
 ConversionStatus MemberReference::get_string(std::string& val) const
 {
 	ConversionStatus status = get_conversion_status(get_type(), STRING);
-	if(status == CONVERSION_ERROR) return status;
-
-	Status member_status = 	_pObj->get_member_variable(_member_name, val);
-	if(member_status != OK)
+	if(status == CONVERSION_ERROR)
 	{
-		TRACE_ERROR("MemberReference::get_string() - Failed to retrieve member variable's value")
-		//throw std::runtime_error("MemberReference::get_string() - Failed to retrieve member variable's value");
-		return CONVERSION_ERROR;
+		TRACE_ERROR("MemberReference::get_string - CONVERSION_ERROR")
+		return status;
+	}
+
+	if(status == CONVERSION_UPCAST_STRING)
+	{
+		val = to_string();
+	}
+	else
+	{
+		Status member_status = 	_pObj->get_member_variable(_member_name, val);
+		if(member_status != OK)
+		{
+			TRACE_ERROR("MemberReference::get_string() - Failed to retrieve member variable's value")
+			return CONVERSION_ERROR;
+		}
 	}
 
 	return status;	
@@ -419,6 +439,7 @@ std::shared_ptr<IValue> ReferenceExpression::eval() const
 	std::shared_ptr<IValue> pVal = std::dynamic_pointer_cast<IValue>(_pRef);
 	if(!pVal) throw undefined_error();
 
+	TRACE_VERBOSE("ReferenceExpression::eval() - " + pVal->to_string());
 	return pVal;
 }
 

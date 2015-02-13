@@ -135,7 +135,8 @@ inline std::shared_ptr<Symbol> get_symbol(std::string name, bool* bIsArray)
 	} catch(...) {\
 		TRACE_ERROR("Unrecognized Exception Caught. Aborting.")\
 		YYABORT;\
-	}
+	}\
+	TRACE_VERBOSE("GPL_END_BLOCK")
 
 #define GPL_BEGIN_EXPR_BLOCK(block_name)\
 	std::string __gpl_block_name = block_name;\
@@ -528,8 +529,8 @@ variable_declaration:
 			std::string name = var_name + "[";
 			name += std::to_string(i) + "]";
 
-			std::shared_ptr<IValue> init_val(new GPLVariant(0));
-			InsertSymbol(name, $1, init_val);
+			//std::shared_ptr<IValue> init_val(new GPLVariant(0));
+			InsertSymbol(name, $1);
 		}
 		
 		GPL_END_DECL_BLOCK()

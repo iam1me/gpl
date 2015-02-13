@@ -320,7 +320,7 @@ std::shared_ptr<IValue> AddExpression::eval() const
 	std::shared_ptr<IValue> val1 = get_child(0)->eval();
 	std::shared_ptr<IValue> val2 = get_child(1)->eval();
 	std::shared_ptr<IValue> ret = nullptr;
-	
+
 	switch(_type)
 	{
 		case INT:
@@ -357,6 +357,7 @@ std::shared_ptr<IValue> AddExpression::eval() const
 			throw std::logic_error("AddExpression::eval() - Invalid Type: " + gpl_type_to_string(_type));	
 	}
 
+	TRACE_VERBOSE("AddExpression::eval() - " + ret->to_string())	
 	return ret;
 }
 
