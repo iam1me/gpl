@@ -96,8 +96,8 @@ bool invalid_operand_type::isRHS() const
 	return !_bLHS;
 }
 
-object_operand_expected::object_operand_expected()
-	: gpl_exception(Error::OPERAND_MUST_BE_A_GAME_OBJECT)
+object_operand_expected::object_operand_expected(Operator_type op)
+	: gpl_exception(Error::OPERAND_MUST_BE_A_GAME_OBJECT, operator_to_string(op))
 {
 }
 

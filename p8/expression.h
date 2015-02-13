@@ -169,7 +169,7 @@ class AddExpression : public IOperationalExpression
 {
 public:
 	AddExpression(std::shared_ptr<IExpression> pArg1, std::shared_ptr<IExpression> pArg2);
-	~AddExpression();
+	virtual ~AddExpression();
 	std::shared_ptr<IValue> eval() const;
 	Gpl_type get_type() const;
 private:
@@ -180,7 +180,7 @@ class MinusExpression : public IOperationalExpression
 {
 public:
 	MinusExpression(std::shared_ptr<IExpression> pArg1, std::shared_ptr<IExpression> pArg2);
-	~MinusExpression();
+	virtual ~MinusExpression();
 	std::shared_ptr<IValue> eval() const;
 	Gpl_type get_type() const;
 private:
@@ -192,7 +192,7 @@ class MultiplyExpression : public IOperationalExpression
 {
 public:
 	MultiplyExpression(std::shared_ptr<IExpression> pArg1, std::shared_ptr<IExpression> pArg2);
-	~MultiplyExpression();
+	virtual ~MultiplyExpression();
 	std::shared_ptr<IValue> eval() const;
 	Gpl_type get_type() const;
 private:
@@ -203,7 +203,7 @@ class DivideExpression : public IOperationalExpression
 {
 public:
 	DivideExpression(std::shared_ptr<IExpression> pArg1, std::shared_ptr<IExpression> pArg2);
-	~DivideExpression();
+	virtual ~DivideExpression();
 	std::shared_ptr<IValue> eval() const;
 	Gpl_type get_type() const;
 private:
@@ -214,7 +214,7 @@ class ModExpression : public IOperationalExpression
 {
 public:
 	ModExpression(std::shared_ptr<IExpression> pArg1, std::shared_ptr<IExpression> pArg2);
-	~ModExpression();
+	virtual ~ModExpression();
 	std::shared_ptr<IValue> eval() const;
 	Gpl_type get_type() const;
 private:
@@ -225,7 +225,7 @@ class SinExpression : public IOperationalExpression
 {
 public:
 	SinExpression(std::shared_ptr<IExpression> pArg1);
-	~SinExpression();
+	virtual ~SinExpression();
 	std::shared_ptr<IValue> eval() const;
 	Gpl_type get_type() const { return DOUBLE; };
 };
@@ -234,7 +234,7 @@ class CosExpression : public IOperationalExpression
 {
 public:
 	CosExpression(std::shared_ptr<IExpression> pArg1);
-	~CosExpression();
+	virtual ~CosExpression();
 	std::shared_ptr<IValue> eval() const;
 	Gpl_type get_type() const { return DOUBLE; };
 };
@@ -243,7 +243,7 @@ class TanExpression : public IOperationalExpression
 {
 public:
 	TanExpression(std::shared_ptr<IExpression> pArg1);
-	~TanExpression();
+	virtual ~TanExpression();
 	std::shared_ptr<IValue> eval() const;
 	Gpl_type get_type() const { return DOUBLE; };
 };
@@ -253,7 +253,7 @@ class AsinExpression : public IOperationalExpression
 {
 public:
 	AsinExpression(std::shared_ptr<IExpression> pArg1);
-	~AsinExpression();
+	virtual ~AsinExpression();
 	std::shared_ptr<IValue> eval() const;
 	Gpl_type get_type() const { return DOUBLE; };
 };
@@ -262,7 +262,7 @@ class AcosExpression : public IOperationalExpression
 {
 public:
 	AcosExpression(std::shared_ptr<IExpression> pArg1);
-	~AcosExpression();
+	virtual ~AcosExpression();
 	std::shared_ptr<IValue> eval() const;
 	Gpl_type get_type() const { return DOUBLE; };
 };
@@ -272,7 +272,7 @@ class AtanExpression : public IOperationalExpression
 {
 public:
 	AtanExpression(std::shared_ptr<IExpression> pArg1);
-	~AtanExpression();
+	virtual ~AtanExpression();
 	std::shared_ptr<IValue> eval() const;
 	Gpl_type get_type() const { return DOUBLE; };
 };
@@ -282,7 +282,7 @@ class SqrtExpression : public IOperationalExpression
 {
 public:
 	SqrtExpression(std::shared_ptr<IExpression> pArg1);
-	~SqrtExpression();
+	virtual ~SqrtExpression();
 	std::shared_ptr<IValue> eval() const;
 	Gpl_type get_type() const { return DOUBLE; };
 };
@@ -293,7 +293,7 @@ class FloorExpression : public IOperationalExpression
 {
 public:
 	FloorExpression(std::shared_ptr<IExpression> pArg1);
-	~FloorExpression();
+	virtual ~FloorExpression();
 	std::shared_ptr<IValue> eval() const;
 	Gpl_type get_type() const { return INT; };
 };
@@ -303,7 +303,7 @@ class AbsoluteExpression : public IOperationalExpression
 {
 public:
 	AbsoluteExpression(std::shared_ptr<IExpression> pArg1);
-	~AbsoluteExpression();
+	virtual ~AbsoluteExpression();
 	std::shared_ptr<IValue> eval() const;
 	Gpl_type get_type() const { return _type; };
 private:
@@ -314,7 +314,7 @@ class RandomExpression : public IOperationalExpression
 {
 public:
 	RandomExpression(std::shared_ptr<IExpression> pArg1);
-	~RandomExpression();
+	virtual ~RandomExpression();
 	std::shared_ptr<IValue> eval() const;
 	Gpl_type get_type() const { return INT; };
 };
@@ -323,7 +323,7 @@ class EqualExpression : public IOperationalExpression
 {
 public:
 	EqualExpression(std::shared_ptr<IExpression> pArg1, std::shared_ptr<IExpression> pArg2);
-	~EqualExpression() {};
+	virtual ~EqualExpression() {};
 	std::shared_ptr<IValue> eval() const;
 	Gpl_type get_type() const { return INT; };
 };
@@ -332,7 +332,7 @@ class NotEqualExpression : public IOperationalExpression
 {
 public:
 	NotEqualExpression(std::shared_ptr<IExpression> pArg1, std::shared_ptr<IExpression> pArg2);
-	~NotEqualExpression() {};
+	virtual ~NotEqualExpression() {};
 	std::shared_ptr<IValue> eval() const;
 	Gpl_type get_type() const { return INT; };
 };
@@ -342,7 +342,7 @@ class LessThanExpression : public IOperationalExpression
 {
 public:
 	LessThanExpression(std::shared_ptr<IExpression> pArg1, std::shared_ptr<IExpression> pArg2);
-	~LessThanExpression() {};
+	virtual ~LessThanExpression() {};
 	std::shared_ptr<IValue> eval() const;
 	Gpl_type get_type() const { return INT; };
 };
@@ -352,7 +352,7 @@ class LessThanEqualExpression : public IOperationalExpression
 {
 public:
 	LessThanEqualExpression(std::shared_ptr<IExpression> pArg1, std::shared_ptr<IExpression> pArg2);
-	~LessThanEqualExpression() {};
+	virtual ~LessThanEqualExpression() {};
 	std::shared_ptr<IValue> eval() const;
 	Gpl_type get_type() const { return INT; };
 };
@@ -362,7 +362,7 @@ class GreaterThanExpression : public IOperationalExpression
 {
 public:
 	GreaterThanExpression(std::shared_ptr<IExpression> pArg1, std::shared_ptr<IExpression> pArg2);
-	~GreaterThanExpression() {};
+	virtual ~GreaterThanExpression() {};
 	std::shared_ptr<IValue> eval() const;
 	Gpl_type get_type() const { return INT; };
 };
@@ -372,7 +372,7 @@ class GreaterThanEqualExpression : public IOperationalExpression
 {
 public:
 	GreaterThanEqualExpression(std::shared_ptr<IExpression> pArg1, std::shared_ptr<IExpression> pArg2);
-	~GreaterThanEqualExpression() {};
+	virtual ~GreaterThanEqualExpression() {};
 	std::shared_ptr<IValue> eval() const;
 	Gpl_type get_type() const { return INT; };
 };
@@ -382,7 +382,7 @@ class AndExpression : public IOperationalExpression
 {
 public:
 	AndExpression(std::shared_ptr<IExpression> pArg1, std::shared_ptr<IExpression> pArg2);
-	~AndExpression() {};
+	virtual ~AndExpression() {};
 	std::shared_ptr<IValue> eval() const;
 	Gpl_type get_type() const { return INT; };
 };
@@ -392,7 +392,7 @@ class OrExpression : public IOperationalExpression
 {
 public:
 	OrExpression(std::shared_ptr<IExpression> pArg1, std::shared_ptr<IExpression> pArg2);
-	~OrExpression() {};
+	virtual ~OrExpression() {};
 	std::shared_ptr<IValue> eval() const;
 	Gpl_type get_type() const { return INT; };
 };
@@ -401,8 +401,27 @@ class NotExpression : public IOperationalExpression
 {
 public:
 	NotExpression(std::shared_ptr<IExpression> pArg1);
-	~NotExpression() {};
+	virtual ~NotExpression() {};
 	std::shared_ptr<IValue> eval() const;
 	Gpl_type get_type() const { return INT; };
 };
+
+class TouchesExpression : public IExpression
+{
+public:
+	TouchesExpression(std::shared_ptr<IExpression> pArg1, std::shared_ptr<IExpression> pArg2);
+	virtual ~TouchesExpression() {};
+	std::shared_ptr<IValue> eval() const;
+	Gpl_type get_type() const { return INT; };
+};
+
+class NearExpression : public IExpression
+{
+public:
+	NearExpression(std::shared_ptr<IExpression> pArg1, std::shared_ptr<IExpression> pArg2);
+	virtual ~NearExpression() {};
+	std::shared_ptr<IValue> eval() const;
+	Gpl_type get_type() const { return INT; };
+};
+
 #endif

@@ -1277,4 +1277,78 @@ std::shared_ptr<IValue> NotExpression::eval() const
 	return pret;
 }
 
+//================================================================
+
+TouchesExpression::TouchesExpression(std::shared_ptr<IExpression> pArg1, 
+				std::shared_ptr<IExpression> pArg2)
+		: IExpression()
+{
+	if(!pArg1 || !pArg2) throw std::invalid_argument("Argument is NULL");
+
+	Gpl_type type = pArg1->get_type();
+	if(type != GAME_OBJECT)
+		throw object_operand_expected(TOUCHES);
+
+	type = pArg2->get_type();
+	if(type != GAME_OBJECT)
+		throw object_operand_expected(TOUCHES);
+
+	add_child(pArg1);
+	add_child(pArg2);
+}
+
+std::shared_ptr<IValue> TouchesExpression::eval() const
+{
+	std::shared_ptr<IValue> pVal1 = get_child(0)->eval();
+	std::shared_ptr<IValue> pVal2 = get_child(1)->eval();
+
+	std::shared_ptr<Game_object> pObj1;
+	std::shared_ptr<Game_object> pObj2;
+
+	if(pVal1->get_game_object(pObj1) == CONVERSION_ERROR)
+		throw undefined_error();
+
+	if(pVal2->get_game_object(pObj2) == CONVERSION_ERROR)
+		throw undefined_error();	
+
+	if(!pObj1 || !pObj2) throw undefined_error();
+
+	int result = pObj1->touches(pObj2);
+	std::shared_ptr<IValue> pret(new GPLVariant(result, true));
+	return pret;
+}
+
+//============================================================
+
+NearExpression::NearExpression(std::shared_ptr<IExpression> pArg1, 
+				std::shared_ptr<IExpression> pArg2)
+	: IExpression()
+{
+	if(!pArg1 || !pArg2) throw std::invalid_argument("Argument is NULL");
+
+	if(!(pArg1->get_type() & pArg2->get_type() & GAME_OBJECT))
+		throw object_operand_expected(NEAR);
+
+	add_child(pArg1);
+	add_child(pArg2);
+}
+
+std::shared_ptr<IValue> NearExpression::eval() const
+{
+	std::shared_ptr<IValue> pVal1 = get_child(0)->eval();
+	std::shared_ptr<IValue> pVal2 = get_child(1)->eval();
+
+	std::shared_ptr<Game_object> pObj1;
+	std::shared_ptr<Game_object> pObj2;
+
+	if(pVal1->get_game_object(pObj1) == CONVERSION_ERROR)
+		throw undefined_error();
+
+	if(pVal2->get_game_object(pObj2) == CONVERSION_ERROR)
+		throw undefined_error();
+
+	int result = pObj1->near(pObj2);
+	std::shared_ptr<IValue>pret(new GPLVariant(result, true));
+	return pret;
+}
 

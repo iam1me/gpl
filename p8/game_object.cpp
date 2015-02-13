@@ -357,7 +357,7 @@ static bool overlap(int ax1, int ay1, int ax2, int ay2,
 
 // since gpl does not have a bool, touches() and near() return an int to reduce
 // confusion between ints and bools
-int Game_object::touches(Game_object *obj)
+int Game_object::touches(const std::shared_ptr<Game_object>& obj)
 {
 
 /*****
@@ -390,7 +390,7 @@ for a vertex inside of another object's triangle.
          obj->m_x, obj->m_y, obj->m_x + obj->m_w, obj->m_y+obj->m_h);
 }
 
-int Game_object::near(Game_object *obj)
+int Game_object::near(const std::shared_ptr<Game_object>& obj)
 {
 
   // expand the bounding boxes of this and obj by their respective m_proximity

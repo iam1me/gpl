@@ -29,6 +29,7 @@ extern int line_count;            // current line in the input; from record.l
 #include "gpl_statement.h"
 #include "window.h"
 #include "event_manager.h"
+#include "helper_functions.h"
 %}
 
 %union 
@@ -582,19 +583,19 @@ object_declaration:
 		switch($1)
 		{
 			case TRIANGLE:
-				pobj.reset(new Triangle());
+				pobj = Triangle::Create();
 				break;
 			case RECTANGLE:
-				pobj.reset(new Rectangle());
+				pobj = Rectangle::Create();
 				break;
 			case CIRCLE:
-				pobj.reset(new Circle());
+				pobj = Circle::Create();
 				break;
 			case PIXMAP:
-				pobj.reset(new Pixmap());
+				pobj = Pixmap::Create();
 				break;
 			case TEXTBOX:
-				pobj.reset(new Textbox());
+				pobj = Textbox::Create();
 				break;
 			default:
 				throw std::invalid_argument("Unrecognized Game Object Type");
@@ -736,24 +737,7 @@ object_declaration:
 		std::shared_ptr<IValue> pval;
 		for(int i = 0; i < size; i++)
 		{
-			switch($1)
-			{
-				case TRIANGLE:
-					pobj.reset(new Triangle());
-					break;
-				case RECTANGLE:
-					pobj.reset(new Rectangle());
-					break;
-				case CIRCLE:
-					pobj.reset(new Circle());
-					break;
-				case PIXMAP:
-					pobj.reset(new Pixmap());
-					break;
-				case TEXTBOX:
-					pobj.reset(new Textbox());
-					break;
-			}
+			pobj = create_game_object($1);
 			pval.reset(new GPLVariant(pobj));
 
 			std::string symbol_name = var_name + "[" + std::to_string(i) + "]";
@@ -1525,10 +1509,20 @@ expression:
     | variable geometric_operator variable %prec OBJECT_COMPARE_OPS
 	{
 		GPL_BEGIN_EXPR_BLOCK("expression[15]")
-		std::shared_ptr<IExpression> pLHS($1);
-		std::shared_ptr<IExpression> pRHS($3);
+		std::shared_ptr<IVariableExpression> pLHS((IVariableExpression*)$1);
+		std::shared_ptr<IVariableExpression> pRHS((IVariableExpression*)$3);
 		
-		throw std::runtime_error("That geometric_operator isn't implemented yet");
+		switch($2)		
+		{
+			TOUCHES:
+				$$ = new TouchesExpression(pLHS, pRHS);
+				break;
+
+			NEAR:
+				$$ = new NearExpression(pLHS, pRHS);
+				break;
+		}
+
 		GPL_END_EXPR_BLOCK($$)
 	}
     ;

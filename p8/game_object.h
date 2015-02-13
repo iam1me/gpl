@@ -178,8 +178,8 @@ class Game_object : public std::enable_shared_from_this<Game_object>
     void never_draw() {m_should_draw = false;}
     void never_animate() {m_should_animate = false;}
 
-    int touches(Game_object *obj);
-    int near(Game_object *obj);
+    int touches(const std::shared_ptr<Game_object>& obj);
+    int near(const std::shared_ptr<Game_object>& obj);
 
     // if no objects have changed, do not draw
     static bool graphics_out_of_date_with_last_rendering();

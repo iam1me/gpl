@@ -116,7 +116,7 @@ private:
 class object_operand_expected : public gpl_exception
 {
 public:
-	object_operand_expected();
+	object_operand_expected(Operator_type op);
 	virtual ~object_operand_expected();
 };
 

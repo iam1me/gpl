@@ -21,6 +21,8 @@
 #define ANIMATION_BLOCK_H
 
 #include <string>
+#include <mutex>
+#include <thread>
 
 #include "symbol.h"
 #include "gpl_statement.h"
@@ -29,21 +31,27 @@ class Animation_block : public statement_block
 {
   public:
     Animation_block(int line, std::shared_ptr<Symbol> parameter_symbol, std::string name);
+	virtual ~Animation_block();
 
-    void execute(const std::shared_ptr<Game_object>&);
+	virtual void execute();
+	virtual void execute(const std::shared_ptr<Game_object>&);
 
     std::shared_ptr<Symbol> get_parameter_symbol() {return m_parameter_symbol;}
-
     std::string name() {return m_name;}
-
-    void mark_complete();
     bool complete();
 
     std::ostream &print(std::ostream &os) const;
 
   private:
+	void executeAsync();
+	bool _bRunning;
+	std::thread* _pExecuteThread;
+	std::mutex _mutex;
+
+
     std::shared_ptr<Symbol> m_parameter_symbol;
     std::string m_name;
+	
 };
 
 #endif // #ifndef ANIMATION_BLOCK_H
