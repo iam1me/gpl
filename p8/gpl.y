@@ -656,7 +656,11 @@ object_declaration:
 			unknown_parameter(game_object_type_to_string($1), pcur->get_name()).write_exception();
 					continue;
 				}				
-		
+
+				/*std::cout << "Setting Parameter '" << pcur->get_name() << "' ("
+					<< gpl_type_to_string(member_type) << ")\n";
+				*/
+
 				std::shared_ptr<IValue> pval = pexpr->eval();
 				switch(member_type)
 				{
@@ -719,7 +723,7 @@ object_declaration:
 						break;
 				}
 
-				if(conv_status == CONVERSION_ERROR || result == MEMBER_NOT_OF_GIVEN_TYPE)
+				if(conv_status == CONVERSION_ERROR || result != OK)
 				{
 					invalid_parameter_type(var_name, pcur->get_name()).write_exception();
 				}
@@ -863,7 +867,7 @@ forward_declaration:
 			std::shared_ptr<Symbol> pObjSymbol = 
 				std::static_pointer_cast<Symbol>(pParam->get_expr()->eval());
 
-			std::string object_name = ((Symbol*)pObjSymbol.get())->get_name();
+			std::string object_name = pObjSymbol->get_name();
 
 			// Check to make sure the animation parameter is of the right type
 			if(!pObjSymbol || (pObjSymbol->get_type() != GAME_OBJECT))
@@ -894,6 +898,14 @@ forward_declaration:
 			std::shared_ptr<IValue>pVal (new GPLVariant(pAnim));
 			InsertSymbol(anim_name, ANIMATION_BLOCK, pVal);
 
+			// Make sure the Parameter Object is not drawn/animated
+			std::shared_ptr<Game_object> pObj;
+			if(pObjSymbol->get_game_object(pObj) == CONVERSION_ERROR)
+				throw undefined_error();
+
+			pObj->never_draw();
+			pObj->never_animate();
+		
 			// Hold onto this info so that we can validate it 
 			// after we have parsed the entire document
 			_animMap.insert(std::make_pair(anim_name, pAnim));

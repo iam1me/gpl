@@ -97,7 +97,7 @@ Game_object::Game_object(double red /* =  0.5 */,
   m_red = red;
   m_green = green;
   m_blue = blue;
-  m_animation_block = 0;
+  m_animation_block = nullptr;
   m_visible = 1;
   m_proximity = 4;
   m_drawing_order = 0;
@@ -288,8 +288,7 @@ Status Game_object::set_member_variable(string name, const std::shared_ptr<Anima
 
   // note, we don't dereference m_value as above because
   // we store Animation_blocks as pointers
-  //*((Animation_block **) variable->m_value) = value;
-  *((std::shared_ptr<Animation_block>*)(variable->m_value)) = value;
+  m_animation_block = value;
 
   updated(name);
   return OK;
@@ -343,7 +342,7 @@ Status Game_object::get_member_variable(string name, std::shared_ptr<Animation_b
 
   // note, we don't dereference m_value as above because
   // we store Animation_blocks as pointers
-  value = *((std::shared_ptr<Animation_block>*) variable->m_value);
+  value = m_animation_block;
   return OK;
 }
 
@@ -442,6 +441,7 @@ Status Game_object::mark_member_variable_as_derived(string name)
 
 void Game_object::animate()
 {
+//	std::cout << "Game_object::animate()\n";
   if (m_animation_block)
   {
     // Call our own animation block
@@ -453,11 +453,12 @@ void Game_object::animate()
     // <this> to the execute function of the animation_block
 
 
-    if (m_animation_block->get_count() == 0)
+    if (m_animation_block->get_count() != 0)
       m_animation_block->execute(shared_from_this());
-    // else do nothing
+   // else std::cout << "Game_object::animate() - animation is empty\n";
 
   }
+ 
 }
 
 bool Game_object::valid() const

@@ -192,8 +192,9 @@ MemberReference::MemberReference(std::string symbol_name, std::string member_nam
 		throw undeclared_variable(symbol_name);
 	}
 
-	ConversionStatus conv_status = _pSymbol->get_game_object(_pObj);
-	if(conv_status == CONVERSION_ERROR || !_pObj)
+	std::shared_ptr<Game_object> pObj;
+	ConversionStatus conv_status = _pSymbol->get_game_object(pObj);
+	if(conv_status == CONVERSION_ERROR || !pObj)
 	{
 		TRACE_ERROR("Failed to get_game_object from Symbol '" + symbol_name + "' - Conversion Error")
 		throw object_expected_lhs(symbol_name);	
@@ -202,7 +203,7 @@ MemberReference::MemberReference(std::string symbol_name, std::string member_nam
 	_member_name = member_name;
 	Gpl_type member_type;
 
-	Status member_status = _pObj->get_member_variable_type(_member_name, member_type);
+	Status member_status = pObj->get_member_variable_type(_member_name, member_type);
 	if(member_status != OK)
 	{
 		TRACE_ERROR("MemberReference::MemberReference - " + status_to_string(member_status))
@@ -225,8 +226,9 @@ MemberReference::MemberReference(std::shared_ptr<Symbol> symbol, std::string mem
 
 	std::string symbol_name = _pSymbol->get_name();
 
-	ConversionStatus conv_status = _pSymbol->get_game_object(_pObj);
-	if(conv_status == CONVERSION_ERROR || !_pObj)
+	std::shared_ptr<Game_object> pObj;
+	ConversionStatus conv_status = _pSymbol->get_game_object(pObj);
+	if(conv_status == CONVERSION_ERROR || !pObj)
 	{
 		TRACE_ERROR("Failed to get_game_object from Symbol '" + symbol_name + "' - Conversion Error")
 		throw object_expected_lhs(symbol_name);
@@ -234,7 +236,7 @@ MemberReference::MemberReference(std::shared_ptr<Symbol> symbol, std::string mem
 
 	_member_name = member_name;
 	Gpl_type member_type;
-	Status member_status = _pObj->get_member_variable_type(_member_name, member_type);
+	Status member_status = pObj->get_member_variable_type(_member_name, member_type);
 	if(member_status != OK)
 	{
 		TRACE_ERROR("MemberReference::MemberReference - " + status_to_string(member_status))
@@ -264,7 +266,11 @@ ConversionStatus MemberReference::get_int(int& val) const
 	ConversionStatus status = get_conversion_status(get_type(), INT);
 	if(status == CONVERSION_ERROR) return status;
 
-	Status member_status = _pObj->get_member_variable(_member_name, val);
+	std::shared_ptr<Game_object> pObj;
+	if(_pSymbol->get_game_object(pObj) == CONVERSION_ERROR)
+		return CONVERSION_ERROR;
+
+	Status member_status = pObj->get_member_variable(_member_name, val);
 	if(member_status != OK)
 	{
 		TRACE_ERROR("MemberReference::get_int() - Failed to retrieve member variable's value")
@@ -280,16 +286,20 @@ ConversionStatus MemberReference::get_double(double& val) const
 	ConversionStatus status = get_conversion_status(get_type(), DOUBLE);
 	if(status == CONVERSION_ERROR) return status;
 
+	std::shared_ptr<Game_object> pObj;
+	if(_pSymbol->get_game_object(pObj) == CONVERSION_ERROR)
+		return CONVERSION_ERROR;
+
 	Status member_status;
 	if(status == CONVERSION_UPCAST_DOUBLE)
 	{
 		int temp;
-		member_status = _pObj->get_member_variable(_member_name, temp);
+		member_status = pObj->get_member_variable(_member_name, temp);
 		val = (double)temp;
 	}
 	else
 	{
-		member_status = _pObj->get_member_variable(_member_name, val);
+		member_status = pObj->get_member_variable(_member_name, val);
 	}
 
 	if(member_status != OK)
@@ -310,13 +320,17 @@ ConversionStatus MemberReference::get_string(std::string& val) const
 		return status;
 	}
 
+	std::shared_ptr<Game_object> pObj;
+	if(_pSymbol->get_game_object(pObj) == CONVERSION_ERROR)
+		return CONVERSION_ERROR;
+
 	if(status == CONVERSION_UPCAST_STRING)
 	{
 		val = to_string();
 	}
 	else
 	{
-		Status member_status = 	_pObj->get_member_variable(_member_name, val);
+		Status member_status = 	pObj->get_member_variable(_member_name, val);
 		if(member_status != OK)
 		{
 			TRACE_ERROR("MemberReference::get_string() - Failed to retrieve member variable's value")
@@ -338,7 +352,11 @@ ConversionStatus MemberReference::get_animation_block(std::shared_ptr<Animation_
 	ConversionStatus status = get_conversion_status(get_type(), ANIMATION_BLOCK);
 	if(status == CONVERSION_ERROR) return status;
 
-	Status member_status = _pObj->get_member_variable(_member_name, val);
+	std::shared_ptr<Game_object> pObj;
+	if(_pSymbol->get_game_object(pObj) == CONVERSION_ERROR)
+		return CONVERSION_ERROR;
+
+	Status member_status = pObj->get_member_variable(_member_name, val);
 	if(member_status != OK)
 	{
 		TRACE_ERROR("MemberReference::get_animation_block() - Failed to retrieve member variable's value")
@@ -354,7 +372,11 @@ ConversionStatus MemberReference::set_int(const int& val)
 	ConversionStatus status = get_conversion_status(get_type(), INT);
 	if(status == CONVERSION_ERROR) return status;
 
-	Status member_status = _pObj->set_member_variable(_member_name, val);
+	std::shared_ptr<Game_object> pObj;
+	if(_pSymbol->get_game_object(pObj) == CONVERSION_ERROR)
+		return CONVERSION_ERROR;
+
+	Status member_status = pObj->set_member_variable(_member_name, val);
 	if(member_status != OK)
 	{
 		TRACE_ERROR("MemberReference::set_int() - Failed to set the member variable's value")
@@ -370,7 +392,11 @@ ConversionStatus MemberReference::set_double(const double& val)
 	ConversionStatus status = get_conversion_status(get_type(), DOUBLE);
 	if(status == CONVERSION_ERROR) return status;
 
-	Status member_status = _pObj->set_member_variable(_member_name, val);
+	std::shared_ptr<Game_object> pObj;
+	if(_pSymbol->get_game_object(pObj) == CONVERSION_ERROR)
+		return CONVERSION_ERROR;
+
+	Status member_status = pObj->set_member_variable(_member_name, val);
 	if(member_status != OK)
 	{
 		TRACE_ERROR("MemberReference::set_double() - Failed to set the member variable's value")
@@ -386,7 +412,11 @@ ConversionStatus MemberReference::set_string(const std::string& val)
 	ConversionStatus status = get_conversion_status(get_type(), STRING);
 	if(status == CONVERSION_ERROR) return status;
 
-	Status member_status = _pObj->set_member_variable(_member_name, val);
+	std::shared_ptr<Game_object> pObj;
+	if(_pSymbol->get_game_object(pObj) == CONVERSION_ERROR)
+		return CONVERSION_ERROR;
+
+	Status member_status = pObj->set_member_variable(_member_name, val);
 	if(member_status != OK)
 	{
 		TRACE_ERROR("MemberReference::set_string() - Failed to set the member variable's value")
@@ -408,7 +438,11 @@ ConversionStatus MemberReference::set_animation_block(const std::shared_ptr<Anim
 	ConversionStatus result = get_conversion_status(get_type(), ANIMATION_BLOCK);
 	if(result == CONVERSION_ERROR) return result;
 
-	Status status = _pObj->set_member_variable(_member_name, val);
+	std::shared_ptr<Game_object> pObj;
+	if(_pSymbol->get_game_object(pObj) == CONVERSION_ERROR)
+		return CONVERSION_ERROR;
+
+	Status status = pObj->set_member_variable(_member_name, val);
 	if(status != OK)
 	{
 		TRACE_ERROR("MemberReference::set_animation_block() - Failed to set the member variable's value. "

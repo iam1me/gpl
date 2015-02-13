@@ -52,8 +52,9 @@ class Animation_block : public statement_block
 	std::mutex _mutex;
 
 	bool _bInit;
-    std::shared_ptr<Symbol> m_parameter_symbol;
-    std::string m_name;
+	std::shared_ptr<Symbol> m_parameter_symbol;
+	std::shared_ptr<Game_object> _pObjBackup;
+	std::string m_name;
 	
 };
 

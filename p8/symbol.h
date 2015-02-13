@@ -105,7 +105,7 @@ public:
 	virtual const std::string& get_name() { return _full_name; };
 
 private:
-	std::shared_ptr<Game_object> _pObj;
+	//std::shared_ptr<Game_object> _pObj;
 	std::shared_ptr<Symbol> _pSymbol;
 	std::string _member_name, _full_name;
 	Gpl_type _member_type;
