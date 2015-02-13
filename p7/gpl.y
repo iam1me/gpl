@@ -359,13 +359,12 @@ inline std::shared_ptr<Symbol> get_symbol(std::string name, bool* bIsArray)
 	A if statement with an else has higher precedence
 	than an if statement without an else
 *******************************************************/
-%precedence IF_NO_ELSE		"if-then"
-%precedence IF_ELSE		"if-then-else"
 %token T_IF                  "if"
 %token T_FOR                 "for"
 %token T_ELSE                "else"
-%nonassoc T_IF T_FOR
-%nonassoc T_ELSE
+
+%precedence IF_NO_ELSE		"if-then"
+%precedence IF_ELSE		"if-then-else"
 
 // special token that does not match any production
 // used for characters that are not part of the language

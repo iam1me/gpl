@@ -222,10 +222,10 @@ std::shared_ptr<IValue> ArrayMemberReferenceExpression::eval() const
 		throw object_expected_lhs(_array_name);
 	}
 
-	TRACE_VERBOSE("Retrieving the Value of Member '" + _member_name + "'. Type: " + gpl_type_to_string(_type));
-	Status member_status;
-	std::shared_ptr<IValue> pret;
-	switch(_type)
+	TRACE_VERBOSE("Constructing Member Reference to '" + ref_name + "." + _member_name + "'");
+	std::shared_ptr<IValue> pret(new MemberReference(pSymbol, _member_name));
+
+	/*switch(_type)
 	{
 		case INT:
 		{
@@ -251,14 +251,7 @@ std::shared_ptr<IValue> ArrayMemberReferenceExpression::eval() const
 			pret.reset(new GPLVariant(val));
 			break;
 		}
-		/*case GAME_OBJECT:
-		{
-			std::shared_ptr<Game_object> val;
-			member_status = pObj->get_member_variable(_member_name, val);
-			if(member_status != OK) break;
-			pret.reset(new GPLVariant(val));
-			break;
-		}*/
+
 		case ANIMATION_BLOCK:
 		{
 			std::shared_ptr<Animation_block> val;
@@ -275,7 +268,7 @@ std::shared_ptr<IValue> ArrayMemberReferenceExpression::eval() const
 	{
 		TRACE_ERROR("ArrayMemberReferenceExpression::eval - Member Status: " + status_to_string(member_status))
 		throw undefined_error();
-	}
+	}*/
 
 	return pret;
 }
