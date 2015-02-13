@@ -13,6 +13,10 @@ extern int line_count;            // current line in the input; from record.l
 
 #include <iostream>
 #include <string>
+#include <vector>
+#include <vector>
+#include <map>
+
 #include "error.h"      // class for printing errors (used by gpl)
 #include "parser.h"
 #include "gpl_type.h"
@@ -182,7 +186,15 @@ inline std::shared_ptr<Symbol> get_symbol(std::string name, bool* bIsArray)
 		<< Error::num_errors() << ")")
 
 
-// Classes used for encapsulating parse information
+// We need to hold onto the name of any forward statement so that we can validate them
+// after we have finished parsing the entire document. Namely, we need to
+// confirm that each animation_block has a body 
+
+typedef std::map<std::string, std::shared_ptr<Animation_block>> AnimationMap;
+AnimationMap _animMap;
+
+// used for parsing/error handling animation blocks
+int _anim_start_line;
 
 %} 
 
@@ -401,6 +413,25 @@ inline std::shared_ptr<Symbol> get_symbol(std::string name, bool* bIsArray)
 //---------------------------------------------------------------------
 program:
     declaration_list block_list
+	{
+		GPL_BEGIN_BLOCK("program")
+
+		//Validate that any animation blocks have a body
+		for(AnimationMap::iterator it = _animMap.begin();
+			it != _animMap.end(); it++)
+		{
+			if(!it->second->is_initialized())
+			{
+				// set the line # to make the error handler use the
+				// right one
+				//line_count = it->second->get_line();
+				animation_body_expected(it->first).write_exception();
+			}
+		}		
+		_animMap.clear();
+
+		GPL_END_BLOCK()
+	}
     ;
 
 //---------------------------------------------------------------------
@@ -843,15 +874,18 @@ forward_declaration:
 			// Check to make sure that the animation parameter ID is available
 			if(is_symbol_defined(object_name, &bIsArray))
 			{
-				throw animation_parameter_not_unique(object_name);
+				//let it keep going
+				animation_parameter_not_unique(object_name).write_exception();
 			}
-		
-			// Register the Symbol & set its value
-			bool result = Symbol_table::instance()->insert_symbol(pObjSymbol);
-			if(!result)
-			{
-				TRACE_ERROR("Insert Symbol failed despite Symbol having a unique name")
-				throw undefined_error();
+			else
+			{		
+				// Register the Symbol & set its value
+				bool result = Symbol_table::instance()->insert_symbol(pObjSymbol);
+				if(!result)
+				{
+					TRACE_ERROR("Insert Symbol failed despite Symbol having a unique name")
+					throw undefined_error();
+				}
 			}
 				
 			// Create and register the animation block
@@ -859,6 +893,10 @@ forward_declaration:
 				new Animation_block(line_count, pObjSymbol, anim_name));	
 			std::shared_ptr<IValue>pVal (new GPLVariant(pAnim));
 			InsertSymbol(anim_name, ANIMATION_BLOCK, pVal);
+
+			// Hold onto this info so that we can validate it 
+			// after we have parsed the entire document
+			_animMap.insert(std::make_pair(anim_name, pAnim));
 
 		GPL_END_BLOCK()
 	}
@@ -893,22 +931,26 @@ initialization_block:
 
 //---------------------------------------------------------------------
 animation_block:
-	T_ANIMATION T_ID T_LPAREN animation_parameter T_RPAREN T_LBRACE statement_list T_RBRACE
+	T_ANIMATION { _anim_start_line = line_count; } 
+		T_ID T_LPAREN animation_parameter T_RPAREN T_LBRACE statement_list T_RBRACE
 	{
 		GPL_BEGIN_BLOCK("animation_block")
 
 		// Grab the important bits of data from the above
-		std::string anim_name(*$2);
-		delete $2;
+		std::string anim_name(*$3);
+		delete $3;
 
-		std::shared_ptr<AnimationParameter> pParam((AnimationParameter*)$4);
-		std::shared_ptr<statement_block> pBlock($7);
+		std::shared_ptr<AnimationParameter> pParam((AnimationParameter*)$5);
+		std::shared_ptr<statement_block> pBlock($8);
 
 		// Check to see if we provided an forward statement
 		std::shared_ptr<Symbol> pAnimSymbol = Symbol_table::instance()->find_symbol(anim_name);
 		if(!pAnimSymbol)
 		{
-			throw animation_forward_expected(anim_name);
+			// temporarily set the line # to the one where the animation block
+			// begins, so as to match the test output
+
+			throw animation_forward_expected(anim_name, _anim_start_line);
 		}
 
 		// Confirm that this is, in fact, an animation block
@@ -918,12 +960,31 @@ animation_block:
 			throw undefined_error();
 		}
 
+		if(pAnim->is_initialized())
+		{
+			throw animation_previously_declared(anim_name, _anim_start_line);	
+		}
+
 		// Confirm that the animation block signature matches that of the forward
 		std::shared_ptr<Symbol> pForwardParamSymbol = pAnim->get_parameter_symbol();
-		if(pForwardParamSymbol->get_name().compare(pParam->get_game_object_name()) != 0
-			|| pForwardParamSymbol->get_type() != pParam->get_game_object_type())
+
+		std::shared_ptr<Game_object> pForwardObj;
+		if(pForwardParamSymbol->get_game_object(pForwardObj) == CONVERSION_ERROR)
 		{
-			throw animation_parameter_invalid();
+			throw undefined_error();
+		}
+
+		if(pForwardParamSymbol->get_name().compare(pParam->get_game_object_name()) != 0
+			|| pForwardObj->get_object_type() != pParam->get_game_object_type())
+		{
+			/*d::cerr << "Forward Param Name: '" << pForwardParamSymbol->get_name() 
+				<< "' (" << gpl_type_to_string(pForwardParamSymbol->get_type())
+				<< ")\n";
+			std::cerr << "Anim Param Name: '" << pParam->get_game_object_name() 
+				<< "' (" << gpl_type_to_string(pParam->get*/
+
+			
+			throw animation_parameter_invalid(_anim_start_line);
 		}
 	
 		// Transfer all of the statements from the generic symbol block to 
@@ -932,6 +993,8 @@ animation_block:
 		{
 			pAnim->insert_statement(pBlock->get_statement(i));
 		}	
+
+		pAnim->set_initialized(true);
 
 		GPL_END_BLOCK()
 	}
@@ -1506,21 +1569,25 @@ expression:
 		}
 		GPL_END_EXPR_BLOCK($$)
 	}
-    | variable geometric_operator variable %prec OBJECT_COMPARE_OPS
+    | variable geometric_operator variable
 	{
 		GPL_BEGIN_EXPR_BLOCK("expression[15]")
 		std::shared_ptr<IVariableExpression> pLHS((IVariableExpression*)$1);
 		std::shared_ptr<IVariableExpression> pRHS((IVariableExpression*)$3);
-		
-		switch($2)		
+		Operator_type geo_oper = $2;		
+
+		switch(geo_oper)		
 		{
-			TOUCHES:
+			case TOUCHES:
 				$$ = new TouchesExpression(pLHS, pRHS);
 				break;
 
-			NEAR:
+			case NEAR:
 				$$ = new NearExpression(pLHS, pRHS);
 				break;
+
+			default:
+				throw std::logic_error("Unmatched geometric_operator");
 		}
 
 		GPL_END_EXPR_BLOCK($$)

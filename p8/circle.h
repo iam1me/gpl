@@ -17,6 +17,9 @@ class Circle : public Game_object
 	static std::shared_ptr<Game_object> Create();
 	virtual ~Circle() {};
 
+    	virtual Game_object_type get_object_type() const
+	{ return CIRCLE; }
+
   private:
 	Circle();
     virtual void updated(std::string name);

@@ -45,6 +45,16 @@ int gpl_exception::get_line() const
 	return _line;
 }
 
+void gpl_exception::set_line(int l)
+{
+	_line = l;
+}
+
+void gpl_exception::write_exception() const		
+{ 
+	Error::error(_err, _args[0], _args[1], _args[2], _line); 
+}
+
 previously_declared_variable::previously_declared_variable(std::string var_name)
 	: gpl_exception(Error::PREVIOUSLY_DECLARED_VARIABLE, var_name)
 {
@@ -68,14 +78,14 @@ invalid_operand_type::invalid_operand_type(Operator_type op_type, bool bLHS)
 	_operator = op_type;
 	_bLHS = bLHS;
 
-	switch(_operator)
+	/*switch(_operator)
 	{
 		case MOD:
 			set_argument(0, "mod");
 			break;
 		default:
 			break;
-	}
+	}*/
 }
 
 invalid_operand_type::~invalid_operand_type() 
@@ -96,8 +106,8 @@ bool invalid_operand_type::isRHS() const
 	return !_bLHS;
 }
 
-object_operand_expected::object_operand_expected(Operator_type op)
-	: gpl_exception(Error::OPERAND_MUST_BE_A_GAME_OBJECT, operator_to_string(op))
+object_operand_expected::object_operand_expected(std::string oper_name)
+	: gpl_exception(Error::OPERAND_MUST_BE_A_GAME_OBJECT, oper_name)
 {
 }
 

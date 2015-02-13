@@ -46,6 +46,9 @@ class Pixmap : public Game_object
     static const unsigned char ALPHA_GREEN = 0;
     static const unsigned char ALPHA_RED = 255;
 
+    	virtual Game_object_type get_object_type() const
+	{ return PIXMAP; }
+
   private:
 	Pixmap();
 

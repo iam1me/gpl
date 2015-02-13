@@ -409,7 +409,7 @@ public:
 class TouchesExpression : public IExpression
 {
 public:
-	TouchesExpression(std::shared_ptr<IExpression> pArg1, std::shared_ptr<IExpression> pArg2);
+	TouchesExpression(std::shared_ptr<IVariableExpression> pArg1, std::shared_ptr<IVariableExpression> pArg2);
 	virtual ~TouchesExpression() {};
 	std::shared_ptr<IValue> eval() const;
 	Gpl_type get_type() const { return INT; };
@@ -418,7 +418,7 @@ public:
 class NearExpression : public IExpression
 {
 public:
-	NearExpression(std::shared_ptr<IExpression> pArg1, std::shared_ptr<IExpression> pArg2);
+	NearExpression(std::shared_ptr<IVariableExpression> pArg1, std::shared_ptr<IVariableExpression> pArg2);
 	virtual ~NearExpression() {};
 	std::shared_ptr<IValue> eval() const;
 	Gpl_type get_type() const { return INT; };

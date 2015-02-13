@@ -153,7 +153,7 @@ class Game_object : public std::enable_shared_from_this<Game_object>
    
     virtual ~Game_object();
     const std::string type() const {return m_object_type_name;}
-   // virtual Game_object_type get_type() = 0;
+    virtual Game_object_type get_object_type() const = 0;
 
     void draw();
 

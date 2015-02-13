@@ -1279,19 +1279,23 @@ std::shared_ptr<IValue> NotExpression::eval() const
 
 //================================================================
 
-TouchesExpression::TouchesExpression(std::shared_ptr<IExpression> pArg1, 
-				std::shared_ptr<IExpression> pArg2)
+TouchesExpression::TouchesExpression(std::shared_ptr<IVariableExpression> pArg1, 
+				std::shared_ptr<IVariableExpression> pArg2)
 		: IExpression()
 {
 	if(!pArg1 || !pArg2) throw std::invalid_argument("Argument is NULL");
 
 	Gpl_type type = pArg1->get_type();
 	if(type != GAME_OBJECT)
-		throw object_operand_expected(TOUCHES);
+		throw object_operand_expected(pArg1->get_name());
 
 	type = pArg2->get_type();
 	if(type != GAME_OBJECT)
-		throw object_operand_expected(TOUCHES);
+		throw object_operand_expected(pArg2->get_name());
+
+	/*std::cerr << "TouchesExpression('" << pArg1->get_name() << "', '"
+			<< pArg2->get_name() << "')\n";
+	*/
 
 	add_child(pArg1);
 	add_child(pArg2);
@@ -1320,14 +1324,21 @@ std::shared_ptr<IValue> TouchesExpression::eval() const
 
 //============================================================
 
-NearExpression::NearExpression(std::shared_ptr<IExpression> pArg1, 
-				std::shared_ptr<IExpression> pArg2)
+NearExpression::NearExpression(std::shared_ptr<IVariableExpression> pArg1, 
+				std::shared_ptr<IVariableExpression> pArg2)
 	: IExpression()
 {
 	if(!pArg1 || !pArg2) throw std::invalid_argument("Argument is NULL");
 
-	if(!(pArg1->get_type() & pArg2->get_type() & GAME_OBJECT))
-		throw object_operand_expected(NEAR);
+	if(pArg1->get_type() != GAME_OBJECT)
+		throw object_operand_expected(pArg1->get_name());
+
+	if(pArg2->get_type() != GAME_OBJECT)
+		throw object_operand_expected(pArg2->get_name());
+
+	/*std::cerr << "NearExpression('" << pArg1->get_name() << "', '"
+			<< pArg2->get_name() << "')\n";
+	*/
 
 	add_child(pArg1);
 	add_child(pArg2);

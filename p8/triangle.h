@@ -10,6 +10,9 @@ class Triangle : public Game_object
 	static std::shared_ptr<Game_object> Create();
 	virtual ~Triangle() {};
 
+    	virtual Game_object_type get_object_type() const
+	{ return TRIANGLE; }
+
   private:
 	Triangle();
     int m_size;

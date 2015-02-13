@@ -25,8 +25,7 @@ public:
 	/*virtual ErrorSeverity get_severity() const
 		{ return DO_NOT_RUN; };*/
 
-	void write_exception() const
-		{ Error::error(_err, _args[0], _args[1], _args[2]); };
+	void write_exception() const;
 
 protected:
 	gpl_exception(Error::Error_type err_type, 
@@ -35,6 +34,7 @@ protected:
 			std::string arg3 = "");	
 
 	void set_argument(int i, std::string arg);
+	void set_line(int line);
 
 private:
 	int _line;
@@ -116,7 +116,7 @@ private:
 class object_operand_expected : public gpl_exception
 {
 public:
-	object_operand_expected(Operator_type op);
+	object_operand_expected(std::string oper_name);
 	virtual ~object_operand_expected();
 };
 
@@ -235,15 +235,18 @@ class animation_body_expected : public gpl_exception
 {
 public:
 	animation_body_expected(std::string anim_name)
-		: gpl_exception(Error::NO_BODY_PROVIDED_FOR_FORWARD, anim_name) {};
+		: gpl_exception(Error::NO_BODY_PROVIDED_FOR_FORWARD, anim_name) 
+		{};
+
 	virtual ~animation_body_expected() {};
 };
 
 class animation_forward_expected : public gpl_exception
 {
 public:
-	animation_forward_expected(std::string anim_name)
-		: gpl_exception(Error::NO_FORWARD_FOR_ANIMATION_BLOCK, anim_name) {};
+	animation_forward_expected(std::string anim_name, int line)
+		: gpl_exception(Error::NO_FORWARD_FOR_ANIMATION_BLOCK, anim_name) 
+		{ set_line(line); };
 	virtual ~animation_forward_expected() {};
 };
 
@@ -258,11 +261,20 @@ public:
 class animation_parameter_invalid : public gpl_exception
 {
 public:
-	animation_parameter_invalid()
+	animation_parameter_invalid(int line)
 		: gpl_exception(Error::ANIMATION_PARAM_DOES_NOT_MATCH_FORWARD)
-		 {};
+		 { set_line(line); };
 
 	virtual ~animation_parameter_invalid(){};
+};
+
+class animation_previously_declared : public gpl_exception
+{
+public:
+	animation_previously_declared(std::string anim_name, int line)
+		: gpl_exception(Error::PREVIOUSLY_DEFINED_ANIMATION_BLOCK, anim_name)
+		{ set_line(line); }
+	virtual ~animation_previously_declared() {};
 };
 
 class invalid_assign_lhs : public gpl_exception

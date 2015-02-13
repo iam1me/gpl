@@ -86,7 +86,8 @@ class Error
     static void error(Error_type type,
                       std::string s1 = "",
                       std::string s2 = "",
-                      std::string s3 = "");
+                      std::string s3 = "",
+		      int line = -1);
 
     static void starting_execution() {m_runtime = true;}
 
@@ -96,7 +97,7 @@ class Error
   protected:
     static bool m_runtime;
     static int m_num_errors;
-    static void error_header();
+    static void error_header(int line);
 };
 
 #endif // #ifndef ERROR_H

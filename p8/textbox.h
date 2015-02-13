@@ -19,6 +19,9 @@ class Textbox : public Game_object
 	static std::shared_ptr<Game_object> Create();
 	virtual ~Textbox() {};
 
+    	virtual Game_object_type get_object_type() const
+	{ return TEXTBOX; }
+
   private:
 	Textbox();
     virtual void build_display_list();

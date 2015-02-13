@@ -40,6 +40,9 @@ class Animation_block : public statement_block
     std::string name() {return m_name;}
     bool complete();
 
+	bool is_initialized() const { return _bInit; };
+	void set_initialized(bool bInit) { _bInit = bInit; };
+
     std::ostream &print(std::ostream &os) const;
 
   private:
@@ -48,7 +51,7 @@ class Animation_block : public statement_block
 	std::thread* _pExecuteThread;
 	std::mutex _mutex;
 
-
+	bool _bInit;
     std::shared_ptr<Symbol> m_parameter_symbol;
     std::string m_name;
 	

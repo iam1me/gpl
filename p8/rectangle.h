@@ -9,6 +9,9 @@ class Rectangle : public Game_object
 	static std::shared_ptr<Game_object> Create();
 	virtual ~Rectangle() {};
 
+    	virtual Game_object_type get_object_type() const
+	{ return RECTANGLE; }
+
   private:
 	Rectangle();
 
