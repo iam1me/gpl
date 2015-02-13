@@ -123,7 +123,7 @@ void print_statement::execute()
 
 	std::string print_string = pval->to_string();
 
-	std::cout << print_string;	
+	std::cout << "gpl[" << get_line() << "]: " << print_string << std::endl;	
 }
 
 //===================================================================

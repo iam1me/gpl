@@ -19,26 +19,29 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <map>
 
+#include "gpl_statement.h"
 #include "window.h" // for Keystroke enum
 
-class Statement_block;
 
 class Event_manager
 {
   public:
-
     static Event_manager *instance();
-
-    void execute_handlers(Window::Keystroke keystroke);
-
     ~Event_manager();
 
-  private:
-    // hide default constructor because this is a singleton
-    Event_manager();
+    void execute_handlers(Window::Keystroke keystroke);
+    void add_handler(Window::Keystroke keystroke, const std::shared_ptr<statement_block>& handler);
 
-    static Event_manager *m_instance;
+  private:
+	// hide default constructor because this is a singleton
+	Event_manager();
+	static Event_manager *m_instance;
+
+	typedef std::vector<std::shared_ptr<statement_block>> EventHandlerList;
+	typedef std::map<Window::Keystroke, EventHandlerList*> EventHandlerMap;
+	EventHandlerMap _eventMap;
 
     // disable default copy constructor and default assignment
     // done as a precaution, they should never be called

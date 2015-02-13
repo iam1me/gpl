@@ -27,6 +27,8 @@ extern int line_count;            // current line in the input; from record.l
 #include "pixmap.h"
 #include "textbox.h"
 #include "gpl_statement.h"
+#include "window.h"
+#include "event_manager.h"
 %}
 
 %union 
@@ -42,6 +44,7 @@ extern int line_count;            // current line in the input; from record.l
 	Gpl_type		union_type;
 	Game_object_type	union_object_type;
 	Operator_type		union_operator;
+	Window::Keystroke	union_key;
 
 	Parameter*		union_parameter;
 	ParameterList*		union_parameter_list;
@@ -388,6 +391,7 @@ inline std::shared_ptr<Symbol> get_symbol(std::string name, bool* bIsArray)
 %type <union_statement_block> statement_list
 %type <union_statement_block> statement_block
 %type <union_statement_block> if_block
+%type <union_key> keystroke
 %%
 /*********************************************
 	G R A M M A R  R U L E S
@@ -985,33 +989,112 @@ animation_parameter:
 //---------------------------------------------------------------------
 on_block:
     T_ON keystroke statement_block
+	{
+		GPL_BEGIN_BLOCK("on_block")
+
+		Window::Keystroke key = $2;
+		std::shared_ptr<statement_block> handler($3);
+
+		Event_manager::instance()->add_handler(key, handler);
+
+		GPL_END_BLOCK()
+	}
     ;
 
 //---------------------------------------------------------------------
 keystroke:
     T_SPACE
+	{
+		$$ = Window::SPACE;
+	}
     | T_UPARROW
+	{
+		$$ = Window::UPARROW;
+	}
     | T_DOWNARROW
+	{
+		$$ = Window::DOWNARROW;
+	}
     | T_LEFTARROW
+	{
+		$$ = Window::LEFTARROW;
+	}
     | T_RIGHTARROW
+	{
+		$$ = Window::RIGHTARROW;
+	}
     | T_LEFTMOUSE_DOWN
+	{
+		$$ = Window::LEFTMOUSE_DOWN;
+	}
     | T_MIDDLEMOUSE_DOWN
+	{
+		$$ = Window::MIDDLEMOUSE_DOWN;
+	}
     | T_RIGHTMOUSE_DOWN
+	{
+		$$ = Window::RIGHTMOUSE_DOWN;
+	}
     | T_LEFTMOUSE_UP
+	{
+		$$ = Window::LEFTMOUSE_UP;
+	}
     | T_MIDDLEMOUSE_UP
+	{
+		$$ = Window::MIDDLEMOUSE_UP;
+	}
     | T_RIGHTMOUSE_UP
+	{
+		$$ = Window::RIGHTMOUSE_UP;
+	}
     | T_MOUSE_MOVE
+	{
+		$$ = Window::MOUSE_MOVE;
+	}
     | T_MOUSE_DRAG
+	{
+		$$ = Window::MOUSE_DRAG;
+	}
     | T_AKEY 
+	{
+		$$ = Window::AKEY;
+	}
     | T_SKEY 
+	{
+		$$ = Window::SKEY;
+	}
     | T_DKEY 
+	{
+		$$ = Window::DKEY;
+	}
     | T_FKEY 
+	{
+		$$ = Window::FKEY;
+	}
     | T_HKEY 
+	{
+		$$ = Window::HKEY;
+	}
     | T_JKEY 
+	{
+		$$ = Window::JKEY;
+	}
     | T_KKEY 
+	{
+		$$ = Window::KKEY;
+	}
     | T_LKEY 
+	{
+		$$ = Window::LKEY;
+	}
     | T_WKEY 
+	{
+		$$ = Window::WKEY;
+	}
     | T_F1
+	{
+		$$ = Window::F1;
+	}
     ;
 
 //---------------------------------------------------------------------

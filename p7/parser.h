@@ -33,6 +33,7 @@
 #include "game_object.h"
 #include "animation_block.h"
 #include "parameter.h"
+#include "window.h"
 
 #include "y.tab.h"
 
